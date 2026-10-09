@@ -32,11 +32,19 @@ package tb_cheshire_pkg;
       return ret;
     endfunction
 
+    // Ara plus the 4096-point 16-bit FFT/IFFT accelerator
+    function automatic cheshire_cfg_t gen_cheshire_ara_fft_cfg();
+      cheshire_cfg_t ret = gen_cheshire_ara_cfg();
+      ret.Fft = 1;
+      return ret;
+    endfunction
+
     // Number of Cheshire configurations
-    localparam int unsigned NumCheshireConfigs = 32'd4;
+    localparam int unsigned NumCheshireConfigs = 32'd5;
 
     // Assemble a configuration array indexed by a numeric parameter
     localparam cheshire_cfg_t [NumCheshireConfigs-1:0] TbCheshireConfigs = {
+        gen_cheshire_ara_fft_cfg(),  // 4: Ara plus FFT/IFFT accelerator
         gen_cheshire_ara_cfg(),  // 3: Ara-enabled configuration
         gen_cheshire_clic_cfg(), // 2: CLIC-enabled configuration
         gen_cheshire_rt_cfg(),   // 1: RT-enabled configuration

@@ -139,6 +139,7 @@ package cheshire_pkg;
     bit     IrqRouter;
     bit     BusErr;
     bit     Ara;
+    bit     Fft;
     // Parameters for Debug Module
     jtag_idcode_t DbgIdCode;
     dw_bt   DbgMaxReqs;
@@ -300,6 +301,7 @@ package cheshire_pkg;
     aw_bt [2**MaxCoresWidth-1:0] cores;
     aw_bt dbg;
     aw_bt ara;
+    aw_bt fft;
     aw_bt dma;
     aw_bt slink;
     aw_bt vga;
@@ -314,6 +316,7 @@ package cheshire_pkg;
     for (int j = 0; j < cfg.NumCores; j++) begin ret.cores[i] = i; i++; end
     ret.dbg = i;
     if (cfg.Ara)        begin i++; ret.ara   = i; end
+    if (cfg.Fft)        begin i++; ret.fft   = i; end
     if (cfg.Dma)        begin i++; ret.dma   = i; end
     if (cfg.SerialLink) begin i++; ret.slink = i; end
     if (cfg.Vga)        begin i++; ret.vga   = i; end
@@ -499,6 +502,7 @@ package cheshire_pkg;
     ret.AxiIdWidth            = Cva6IdWidth;
     ret.AxiUserWidth          = cfg.AxiUserWidth;
     ret.CvxifEn               = 0;
+    ret.RVV                   = cfg.Ara | cfg.Fft;
     ret.DmBaseAddress         = AmDbg;
     ret.HaltAddress           = 'h800; // Relative to AmDbg
     ret.ExceptionAddress      = 'h810; // Relative to AmDbg
@@ -589,6 +593,7 @@ package cheshire_pkg;
     IrqRouter         : 0,
     BusErr            : 1,
     Ara               : 0,
+    Fft               : 0,
     // Debug
     DbgIdCode         : CheshireIdCode,
     DbgMaxReqs        : 4,

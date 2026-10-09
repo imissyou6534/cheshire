@@ -43,6 +43,20 @@ sources:
   - hw/regs/cheshire_reg_pkg.sv
   - hw/regs/cheshire_reg_top.sv
   - hw/cheshire_idma_wrap.sv
+  - hw/fft/src/fft_accel_pkg.sv
+  - hw/fft/src/multi_accel_router.sv
+  - hw/fft/src/fft_task_ctrl.sv
+  - hw/fft/src/fft_accelerator_ip.sv
+  - hw/fft/rtl/bimpy.v
+  - hw/fft/rtl/longbimpy.v
+  - hw/fft/rtl/convround.v
+  - hw/fft/rtl/hwbfly.v
+  - hw/fft/rtl/butterfly.v
+  - hw/fft/rtl/fftstage.v
+  - hw/fft/rtl/qtrstage.v
+  - hw/fft/rtl/laststage.v
+  - hw/fft/rtl/bitreverse.v
+  - hw/fft/rtl/fftifftmain.v
   - hw/cheshire_pkg.sv
   - hw/cheshire_soc.sv
 

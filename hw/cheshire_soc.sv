@@ -612,8 +612,8 @@ module cheshire_soc import cheshire_pkg::*; #(
   axi_ara_wide_resp_t axi_ara_wide_resp_inval, axi_ara_wide_resp;
 
   // Accelerator ports
-  cva6_to_acc_t acc_req;
-  acc_to_cva6_t acc_resp;
+  cva6_to_acc_t acc_req, acc_req_ara, acc_req_fft;
+  acc_to_cva6_t acc_resp, acc_resp_ara, acc_resp_fft;
 
   // CVA6-Ara memory consistency
   logic                     acc_cons_en;
@@ -634,6 +634,8 @@ module cheshire_soc import cheshire_pkg::*; #(
   for (genvar i = 0; i < NumIntHarts; i++) begin : gen_cva6_cores
     axi_cva6_req_t core_out_req, core_ur_req;
     axi_cva6_rsp_t core_out_rsp, core_ur_rsp;
+    axi_mst_req_t  axi_fft_req;
+    axi_mst_rsp_t  axi_fft_rsp;
 
     // CLIC interface
     logic clic_irq_valid, clic_irq_ready;
@@ -798,6 +800,56 @@ module cheshire_soc import cheshire_pkg::*; #(
       .mst_resp_i ( axi_in_rsp[AxiIn.cores[i]] )
     );
 
+    if (Cfg.Fft) begin : gen_multi_accel_router
+`ifndef SYNTHESIS
+      initial $display("[cheshire_soc] FFT accelerator enabled in this configuration");
+`endif
+      multi_accel_router #(
+        .cva6_to_acc_t ( cva6_to_acc_t ),
+        .acc_to_cva6_t ( acc_to_cva6_t )
+      ) i_multi_accel_router (
+        .clk_i,
+        .rst_ni,
+        .acc_req_i  ( acc_req      ),
+        .acc_resp_o ( acc_resp     ),
+        .ara_req_o  ( acc_req_ara  ),
+        .ara_resp_i ( acc_resp_ara ),
+        .fft_req_o  ( acc_req_fft  ),
+        .fft_resp_i ( acc_resp_fft )
+      );
+
+      fft_accelerator_ip #(
+        .AddrWidth          ( Cfg.AddrWidth       ),
+        .DataWidth          ( Cfg.AxiDataWidth    ),
+        .TransIdWidth       ( Cva6Cfg.TRANS_ID_BITS ),
+        .exception_t        ( exception_t         ),
+        .accelerator_req_t  ( accelerator_req_t   ),
+        .accelerator_resp_t ( accelerator_resp_t  ),
+        .acc_mmu_req_t      ( acc_mmu_req_t       ),
+        .cva6_to_acc_t      ( cva6_to_acc_t       ),
+        .acc_to_cva6_t      ( acc_to_cva6_t       ),
+        .axi_req_t          ( axi_mst_req_t       ),
+        .axi_rsp_t          ( axi_mst_rsp_t       )
+      ) i_fft_accelerator_ip (
+        .clk_i,
+        .rst_ni,
+        .acc_req_i  ( acc_req_fft  ),
+        .acc_resp_o ( acc_resp_fft ),
+        .axi_req_o  ( axi_fft_req  ),
+        .axi_rsp_i  ( axi_fft_rsp  )
+      );
+
+      assign axi_in_req[AxiIn.fft] = axi_fft_req;
+      assign axi_fft_rsp           = axi_in_rsp[AxiIn.fft];
+    end else begin : gen_no_fft
+      assign acc_req_ara            = acc_req;
+      assign acc_resp               = acc_resp_ara;
+      assign acc_req_fft            = '0;
+      assign acc_resp_fft           = '0;
+      assign axi_fft_req            = '0;
+      assign axi_fft_rsp            = '0;
+    end
+
     // Generate Ara RVV vector processor if enabled
     if (Cfg.Ara) begin : gen_ara
       axi_mst_req_t axi_ara_narrow_req;
@@ -830,8 +882,8 @@ module cheshire_soc import cheshire_pkg::*; #(
         .scan_enable_i   ( 1'b0              ),
         .scan_data_i     ( 1'b0              ),
         .scan_data_o     ( /* Unused */      ),
-        .acc_req_i       ( acc_req           ),
-        .acc_resp_o      ( acc_resp          ),
+        .acc_req_i       ( acc_req_ara       ),
+        .acc_resp_o      ( acc_resp_ara      ),
         .axi_req_o       ( axi_ara_wide_req  ),
         .axi_resp_i      ( axi_ara_wide_resp )
       );
@@ -890,7 +942,7 @@ module cheshire_soc import cheshire_pkg::*; #(
 
     end else begin : gen_no_ara
       // Tie-to-safe the Ara-related signals
-      assign acc_resp              = '0;
+      assign acc_resp_ara          = '0;
       assign inval_valid           = '0;
       assign inval_addr            = '0;
     end

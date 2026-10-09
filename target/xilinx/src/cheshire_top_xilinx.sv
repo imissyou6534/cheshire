@@ -127,6 +127,9 @@ module cheshire_top_xilinx import cheshire_pkg::*; #(
     ret.AraVLEN = `ifdef VLEN `VLEN `else 0 `endif;
     ret.AraNrLanes = `ifdef NR_LANES `NR_LANES `else 0 `endif;
   `endif
+  `ifdef FFT_ACCEL
+    ret.Fft = 1;
+  `endif
     return ret;
   endfunction
 
