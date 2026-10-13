@@ -43,6 +43,7 @@ BENDER_ROOT ?= $(CHS_ROOT)/.bender
 # Ensure both Bender dependencies and (essential) submodules are checked out
 $(BENDER_ROOT)/.chs_deps:
 	$(BENDER) checkout
+	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
 	cd $(CHS_ROOT) && git submodule update --init --recursive sw/deps/printf
 	@touch $@
 
@@ -147,11 +148,21 @@ CHS_BOOTROM_ALL += $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/boo
 # Simulation #
 ##############
 
+CHS_PHONY += chs-shared-dma-test
+chs-shared-dma-test:
+	bash $(CHS_ROOT)/util/run_shared_dma_tests.sh
+
+CHS_PHONY += chs-shared-dma-system-test
+chs-shared-dma-system-test:
+	bash $(CHS_ROOT)/util/run_shared_dma_system.sh
+
 $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: $(CHS_ROOT)/Bender.yml
+	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
 	$(BENDER) script vsim -t sim -t test $(CHS_BENDER_RTL_FLAGS) --vlog-arg="$(VLOG_ARGS)" > $@
 	echo 'vlog "$(realpath $(CHS_ROOT))/target/sim/src/elfloader.cpp" -ccflags "-std=c++11" -cpppath "$(CXX_PATH)"' >> $@
 
 $(CHS_ROOT)/target/sim/vcs/compile.cheshire_soc.sh: $(CHS_ROOT)/Bender.yml
+	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
 	$(BENDER) script vcs -t sim -t test $(CHS_BENDER_RTL_FLAGS) --vlog-arg="$(VLOGAN_ARGS)" --vlogan-bin="$(VLOGAN)" > $@
 	chmod +x $@
 

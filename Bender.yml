@@ -42,6 +42,13 @@ sources:
   - hw/bootrom/cheshire_bootrom.sv
   - hw/regs/cheshire_reg_pkg.sv
   - hw/regs/cheshire_reg_top.sv
+  - hw/shared_dma/cheshire_dma_pkg.sv
+  - hw/shared_dma/dma_tile_frontend.sv
+  - hw/shared_dma/dma_job_scheduler.sv
+  - hw/shared_dma/dma_engine_wrap.sv
+  - hw/shared_dma/shared_dma_pool.sv
+  - hw/shared_dma/global_ddr_fabric.sv
+  - hw/shared_dma/cheshire_shared_dma_subsystem.sv
   - hw/cheshire_idma_wrap.sv
   - hw/fft/src/fft_accel_pkg.sv
   - hw/fft/src/multi_accel_router.sv
@@ -58,7 +65,18 @@ sources:
   - hw/fft/rtl/bitreverse.v
   - hw/fft/rtl/fftifftmain.v
   - hw/cheshire_pkg.sv
+  - hw/shared_dma/cheshire_shared_dma_cfg_pkg.sv
   - hw/cheshire_soc.sv
+  - hw/shared_dma/multi_tile_top.sv
+
+  - target: shared_dma_test
+    files:
+      - target/sim/src/tb_shared_dma.sv
+      - target/sim/src/tb_multi_tile_elab.sv
+
+  - target: shared_dma_system_test
+    files:
+      - target/sim/src/tb_shared_dma_system.sv
 
   - target: any(simulation, test)
     files:

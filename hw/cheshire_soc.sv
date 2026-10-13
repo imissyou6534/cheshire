@@ -11,6 +11,8 @@
 module cheshire_soc import cheshire_pkg::*; #(
   // Cheshire config
   parameter cheshire_cfg_t Cfg = '0,
+  // Resolve shared-DDR atomics after all tile and DMA writers have been merged.
+  parameter bit LlcSharedAtomics = 1'b0,
   // Debug info for external harts
   parameter dm::hartinfo_t [iomsb(Cfg.NumExtDbgHarts):0] ExtHartinfo = '0,
   // Interconnect types (must agree with Cheshire config)
@@ -443,7 +445,7 @@ module cheshire_soc import cheshire_pkg::*; #(
   axi_slv_req_t axi_llc_cut_req;
   axi_slv_rsp_t axi_llc_cut_rsp;
 
-  if (Cfg.LlcOutConnect) begin : gen_llc_atomics
+  if (Cfg.LlcOutConnect && !LlcSharedAtomics) begin : gen_llc_atomics
 
     axi_slv_req_t axi_llc_amo_req;
     axi_slv_rsp_t axi_llc_amo_rsp;
@@ -491,6 +493,13 @@ module cheshire_soc import cheshire_pkg::*; #(
       .mst_resp_i ( axi_llc_cut_rsp )
     );
 
+  end
+
+  if (Cfg.LlcOutConnect && LlcSharedAtomics) begin : gen_shared_llc_atomics
+    assign axi_llc_cut_req = axi_out_req[AxiOut.llc];
+    assign axi_out_rsp[AxiOut.llc] = axi_llc_cut_rsp;
+    initial assert(!Cfg.LlcNotBypass)
+      else $fatal(1,"Shared LLC atomics require LLC bypass");
   end
 
   if (Cfg.LlcOutConnect && Cfg.LlcNotBypass) begin : gen_llc
@@ -1259,6 +1268,11 @@ module cheshire_soc import cheshire_pkg::*; #(
   //  PLIC  //
   ////////////
 
+  // Generated PLIC may have spare sources; zero-extend instead of selecting
+  // beyond the packed SoC interrupt vector (which produces X in simulation).
+  logic [rv_plic_reg_pkg::NumSrc-1:0] plic_sources;
+  assign plic_sources = intr_routed[IntrRtdPlic];
+
   rv_plic #(
     .reg_req_t  ( reg_req_t ),
     .reg_rsp_t  ( reg_rsp_t )
@@ -1267,7 +1281,7 @@ module cheshire_soc import cheshire_pkg::*; #(
     .rst_ni,
     .reg_req_i  ( reg_out_req[RegOut.plic] ),
     .reg_rsp_o  ( reg_out_rsp[RegOut.plic] ),
-    .intr_src_i ( intr_routed[IntrRtdPlic][rv_plic_reg_pkg::NumSrc-1:0] ),
+    .intr_src_i ( plic_sources ),
     .irq_o      ( xeip ),
     .irq_id_o   ( ),
     .msip_o     ( )

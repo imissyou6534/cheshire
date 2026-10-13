@@ -1,0 +1,45 @@
+diff --git a/target/rtl/idma_legalizer_rw_axi.sv b/target/rtl/idma_legalizer_rw_axi.sv
+--- a/target/rtl/idma_legalizer_rw_axi.sv
++++ b/target/rtl/idma_legalizer_rw_axi.sv
+@@ -125,4 +125,4 @@
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+@@ -146,4 +146,4 @@
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+diff --git a/src/backend/tpl/idma_legalizer.sv.tpl b/src/backend/tpl/idma_legalizer.sv.tpl
+--- a/src/backend/tpl/idma_legalizer.sv.tpl
++++ b/src/backend/tpl/idma_legalizer.sv.tpl
+@@ -184,4 +184,4 @@
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+@@ -262,4 +262,4 @@
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+diff --git a/target/rtl/idma_generated.sv b/target/rtl/idma_generated.sv
+--- a/target/rtl/idma_generated.sv
++++ b/target/rtl/idma_generated.sv
+@@ -2523,4 +2523,4 @@
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+@@ -2544,4 +2544,4 @@
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),

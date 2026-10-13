@@ -1,0 +1,11 @@
+diff --git a/src/axi_riscv_lrsc.sv b/src/axi_riscv_lrsc.sv
+--- a/src/axi_riscv_lrsc.sv
++++ b/src/axi_riscv_lrsc.sv
+@@ -320,4 +320,5 @@
+-    // 3 bits AxSIZE + 8 bits AxLEN - ignored LSBs
+-    logic [10-AXI_ADDR_LSB:0] clr_len_d,        clr_len_q,
++    // Up to 256 beats of 128 bytes; include the bit representing the full count.
++    // A 64-bit bus needs to represent 256 granules, not just values up to 255.
++    logic [15-AXI_ADDR_LSB:0] clr_len_d,        clr_len_q,
+                               aw_res_len;
+ 
