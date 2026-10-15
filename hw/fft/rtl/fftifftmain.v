@@ -75,6 +75,9 @@
 //
 //
 //
+`ifndef CHESHIRE_FFT_COEFF_ROOT
+`define CHESHIRE_FFT_COEFF_ROOT "../../../hw/fft/rtl"
+`endif
 module fftifftmain(i_clk, i_reset, i_ce,
 		i_inverse,
 		 i_sample, o_result, o_sync);
@@ -112,7 +115,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_4096.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_4096.hex"})
 		// }}}
 	) stage_4096(
 		// {{{
@@ -142,7 +145,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_2048.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_2048.hex"})
 		// }}}
 	) stage_2048(
 		// {{{
@@ -171,7 +174,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_1024.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_1024.hex"})
 		// }}}
 	) stage_1024(
 		// {{{
@@ -200,7 +203,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_512.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_512.hex"})
 		// }}}
 	) stage_512(
 		// {{{
@@ -229,7 +232,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_256.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_256.hex"})
 		// }}}
 	) stage_256(
 		// {{{
@@ -258,7 +261,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_128.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_128.hex"})
 		// }}}
 	) stage_128(
 		// {{{
@@ -287,7 +290,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_64.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_64.hex"})
 		// }}}
 	) stage_64(
 		// {{{
@@ -316,7 +319,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_32.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_32.hex"})
 		// }}}
 	) stage_32(
 		// {{{
@@ -345,7 +348,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_16.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_16.hex"})
 		// }}}
 	) stage_16(
 		// {{{
@@ -374,7 +377,7 @@ module fftifftmain(i_clk, i_reset, i_ce,
 		.OPT_HWMPY(0),
 		.OPT_RUNTIME_INVERSE(1),
 		.CKPCE(1),
-		.COEFFILE("../../../hw/fft/rtl/cmem_8.hex")
+		.COEFFILE({`CHESHIRE_FFT_COEFF_ROOT,"/cmem_8.hex"})
 		// }}}
 	) stage_8(
 		// {{{

@@ -17,10 +17,23 @@ read_ip [exec realpath {*}[lrange $argv 2 end]]
 
 # Load constraints
 import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${proj}.xdc
-import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${board}.xdc
+if { $proj eq "multi_tile" } {
+    import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/multi_tile.${board}.xdc
+} else {
+    import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${board}.xdc
+}
 
 # Load RTL sources
-source ${xilinx_root}/scripts/add_sources.${board}.tcl
+if { $proj eq "multi_tile" } {
+    source ${xilinx_root}/scripts/add_sources.multi_tile.${board}.tcl
+    set coeff_root [file normalize ${xilinx_root}/../../hw/fft/rtl]
+    set defines [get_property verilog_define [current_fileset]]
+    lappend defines "CHESHIRE_FFT_COEFF_ROOT=\"${coeff_root}\""
+    set_property verilog_define $defines [current_fileset]
+    add_files -norecurse [glob -directory $coeff_root cmem_*.hex]
+} else {
+    source ${xilinx_root}/scripts/add_sources.${board}.tcl
+}
 
 # Set top module
 set_property top ${proj}_top_xilinx [current_fileset]
@@ -35,6 +48,12 @@ set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
 synth_design -rtl -name rtl_1
 report_clocks -file ${project_root}/clocks.rpt
 
+if { $proj eq "multi_tile" && [info exists ::env(CHS_XILINX_ELAB_ONLY)] &&
+     $::env(CHS_XILINX_ELAB_ONLY) eq "1" } {
+    puts "PASS Xilinx RTL elaboration: ${proj} on ${board}"
+    return
+}
+
 # Synthesis
 launch_runs -jobs $num_jobs synth_1
 wait_on_run synth_1
@@ -42,6 +61,12 @@ open_run synth_1
 
 # Generate synthesis reports
 gen_reports ${project_root}/reports.synth
+
+if { $proj eq "multi_tile" && [info exists ::env(CHS_XILINX_SYNTH_ONLY)] &&
+     $::env(CHS_XILINX_SYNTH_ONLY) eq "1" } {
+    puts "PASS Xilinx synthesis: ${proj} on ${board}"
+    return
+}
 
 # Instantiate debug core and ILAs
 # TODO: debug this
@@ -67,7 +92,7 @@ if { ![string match -nocase {*timing constraints are met*} $trep] } {
 
 # Copy out final bitstream
 file mkdir ${xilinx_root}/out
-file copy -force ${project_root}/${proj}.runs/impl_1/cheshire_top_xilinx.bit \
+file copy -force ${project_root}/${proj}.runs/impl_1/${proj}_top_xilinx.bit \
     ${xilinx_root}/out/${proj}.${board}.bit
-file copy -force ${project_root}/${proj}.runs/impl_1/cheshire_top_xilinx.ltx \
+file copy -force ${project_root}/${proj}.runs/impl_1/${proj}_top_xilinx.ltx \
     ${xilinx_root}/out/${proj}.${board}.ltx

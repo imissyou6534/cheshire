@@ -63,6 +63,30 @@ endef
 
 $(foreach board,$(CHS_XILINX_BOARDS),$(eval $(call chs_xilinx_bit_rule,$(board))))
 
+# Separate source list and output paths preserve the original single-SoC target.
+CHS_NUM_TILES ?= 1
+CHS_NUM_DMAS ?= 1
+CHS_XILINX_SYNTH_ONLY ?= 0
+CHS_MULTITILE_RTL_FLAGS ?= -t rtl -t cva6 -t cv64a6_imafdcv_sv39 -t exclude_first_pass_decoder \
+    --define ARA --define NR_LANES=2 --define VLEN=2048 --define FFT_ACCEL
+CHS_MULTITILE_IPS := $(CHS_XILINX_IPS_vcu118:%=$(CHS_XILINX_DIR)/build/vcu118.%/out.xci)
+CHS_PHONY += chs-xilinx-multi-tile-vcu118
+chs-xilinx-multi-tile-vcu118: $(CHS_HW_ALL) $(CHS_MULTITILE_IPS) \
+        | $(CHS_XILINX_DIR)/build/vcu118.multi_tile/
+	@test "$(CHS_NUM_TILES)" -ge 1 && test "$(CHS_NUM_TILES)" -le 64
+	@test "$(CHS_NUM_DMAS)" -ge 1 && test "$(CHS_NUM_DMAS)" -le 65536
+	@test "$(CHS_XILINX_SYNTH_ONLY)" = 0 -o "$(CHS_XILINX_SYNTH_ONLY)" = 1
+	$(BENDER) script vivado -t fpga -t vcu118 $(CHS_MULTITILE_RTL_FLAGS) \
+	    --define CHS_NUM_TILES=$(CHS_NUM_TILES) --define CHS_NUM_DMAS=$(CHS_NUM_DMAS) \
+	    > $(CHS_XILINX_DIR)/scripts/add_sources.multi_tile.vcu118.tcl
+	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
+	bash $(CHS_ROOT)/util/prepare_shared_dma_plic.sh --check
+	cd $(CHS_XILINX_DIR)/build/vcu118.multi_tile/ && \
+	    CHS_XILINX_SYNTH_ONLY=$(CHS_XILINX_SYNTH_ONLY) $(VIVADO) -mode batch \
+	    -log ../multi_tile.vcu118.log -jou ../multi_tile.vcu118.jou \
+	    -source $(CHS_XILINX_DIR)/scripts/impl_sys.tcl \
+	    -tclargs vcu118 multi_tile $(CHS_MULTITILE_IPS)
+
 # Builds bitstreams for all available boards
 CHS_XILINX_ALL = $(foreach board,$(CHS_XILINX_BOARDS),$$(CHS_XILINX_DIR)/out/cheshire.$(board).bit)
 

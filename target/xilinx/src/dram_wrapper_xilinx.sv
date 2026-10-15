@@ -13,6 +13,7 @@
 `include "common_cells/registers.svh"
 
 module dram_wrapper_xilinx #(
+  parameter bit SyncDdrReset = 0,
   parameter type axi_soc_aw_chan_t = logic,
   parameter type axi_soc_w_chan_t  = logic,
   parameter type axi_soc_b_chan_t  = logic,
@@ -115,6 +116,15 @@ module dram_wrapper_xilinx #(
   // Clock on which is clocked the DRAM AXI
   logic dram_axi_clk;
   logic dram_rst_o;
+  logic dram_axi_resetn;
+  if (SyncDdrReset) begin : gen_ui_reset
+    rstgen i_ui_rstgen (
+      .clk_i(dram_axi_clk), .rst_ni(soc_resetn_i && !dram_rst_o),
+      .test_mode_i(1'b0), .rst_no(dram_axi_resetn), .init_no()
+    );
+  end else begin : gen_legacy_reset
+    assign dram_axi_resetn = soc_resetn_i;
+  end
 
   // Signals before resizing
   axi_soc_req_t  soc_dresizer_req;
@@ -214,7 +224,7 @@ module dram_wrapper_xilinx #(
       .src_req_i  ( iresizer_cdc_req ),
       .src_resp_o ( iresizer_cdc_rsp ),
       .dst_clk_i  ( dram_axi_clk ),
-      .dst_rst_ni ( ~dram_rst_o  ),
+      .dst_rst_ni ( SyncDdrReset ? dram_axi_resetn : ~dram_rst_o ),
       .dst_req_o  ( cdc_dram_req ),
       .dst_resp_i ( cdc_dram_rsp )
     );
@@ -245,7 +255,7 @@ module dram_wrapper_xilinx #(
     // Reset
     .sys_rst                    ( sys_rst_i    ),  // Active high
     .c0_sys_clk_i               ( dram_clk_i   ),
-    .c0_ddr4_aresetn            ( soc_resetn_i ),
+    .c0_ddr4_aresetn            ( dram_axi_resetn ),
     // Clock and reset out
     .c0_ddr4_ui_clk             ( dram_axi_clk ),
     .c0_ddr4_ui_clk_sync_rst    ( dram_rst_o   ),
