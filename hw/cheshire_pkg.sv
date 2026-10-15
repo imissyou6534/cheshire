@@ -149,6 +149,8 @@ package cheshire_pkg;
     bit     DbgAmoPostCut;
     // Parameters for LLC
     bit     LlcNotBypass;
+    // Split private SPM from the globally coordinated DDR path.
+    bit     LlcSpmPrivate;
     shrt_bt LlcSetAssoc;
     shrt_bt LlcNumLines;
     shrt_bt LlcNumBlocks;
@@ -362,6 +364,7 @@ package cheshire_pkg;
     // Otherwise, we assume external ports map and back the SPM region.
     // We map both the cached and uncached regions.
     if (cfg.LlcNotBypass) begin
+      if (cfg.LlcSpmPrivate) i++;
       ret.spm = i;
       r++; ret.map[r] = '{i, AmSpm, AmSpm + SizeSpm};
       r++; ret.map[r] = '{i, AmSpm + 'h0400_0000, AmSpm + 'h0400_0000 + SizeSpm};
@@ -603,6 +606,7 @@ package cheshire_pkg;
     DbgAmoPostCut     : 1,
     // LLC: 128 KiB, up to 2 GiB DRAM
     LlcNotBypass      : 1,
+    LlcSpmPrivate     : 0,
     LlcSetAssoc       : 8,
     LlcNumLines       : 256,
     LlcNumBlocks      : 8,

@@ -27,9 +27,14 @@ int main(void) {
     // Copy the hello world string to buf
     str_v = __riscv_vle8_v_u8m1(str, sizeof(str));
     __riscv_vse8_v_u8m1(buf, str_v, sizeof(str));
+    __asm__ volatile ("fence iorw, iorw" ::: "memory");
+
+    for (unsigned i = 0; i < sizeof(str); ++i) {
+        if (buf[i] != str[i]) return 1;
+    }
 
     // Print buf
-    printf("%s", str_v);
+    printf("%s", buf);
 
     cheshire_end();
 

@@ -39,11 +39,17 @@ package tb_cheshire_pkg;
       return ret;
     endfunction
 
+    // Private SPM extends Ara + FFT without changing configuration 4.
+    function automatic cheshire_cfg_t gen_cheshire_ara_fft_spm_cfg();
+      return cheshire_shared_dma_cfg_pkg::private_spm_tile_cfg(gen_cheshire_ara_fft_cfg());
+    endfunction
+
     // Number of Cheshire configurations
-    localparam int unsigned NumCheshireConfigs = 32'd5;
+    localparam int unsigned NumCheshireConfigs = 32'd6;
 
     // Assemble a configuration array indexed by a numeric parameter
     localparam cheshire_cfg_t [NumCheshireConfigs-1:0] TbCheshireConfigs = {
+        gen_cheshire_ara_fft_spm_cfg(), // 5: Ara + FFT, private SPM, shared DMA
         gen_cheshire_ara_fft_cfg(),  // 4: Ara plus FFT/IFFT accelerator
         gen_cheshire_ara_cfg(),  // 3: Ara-enabled configuration
         gen_cheshire_clic_cfg(), // 2: CLIC-enabled configuration

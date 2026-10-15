@@ -9,6 +9,7 @@ package cheshire_shared_dma_cfg_pkg;
     cfg.Dma=0;
     cfg.LlcOutConnect=1;
     cfg.LlcNotBypass=0;
+    cfg.LlcSpmPrivate=0;
     cfg.AxiExtNumMst=0;
     cfg.AxiExtNumSlv=1;
     cfg.AxiExtNumRules=1;
@@ -24,6 +25,18 @@ package cheshire_shared_dma_cfg_pkg;
     cfg.NumExtIrqHarts=0;
     cfg.NumExtDbgHarts=0;
     cfg.I2c=0; cfg.SpiHost=0; cfg.Gpio=0; cfg.SerialLink=0; cfg.Vga=0; cfg.Usb=0;
+    return cfg;
+  endfunction
+
+  function automatic cheshire_pkg::cheshire_cfg_t private_spm_tile_cfg(
+      input cheshire_pkg::cheshire_cfg_t base);
+    cheshire_pkg::cheshire_cfg_t cfg;
+    cfg=tile_cfg(base);
+    cfg.Bootrom=1;
+    cfg.PlatformRom=0;
+    cfg.LlcNotBypass=1;
+    cfg.LlcSpmPrivate=1;
+    cfg.AxiExtNumMst=1;
     return cfg;
   endfunction
 endpackage

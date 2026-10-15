@@ -26,8 +26,6 @@ else
 fi
 out="$project_root/target/shared_dma_system/${tiles}x${engines}/$mode"
 mkdir -p "$out/elf"
-bash util/prepare_shared_dma_deps.sh
-bash util/prepare_shared_dma_plic.sh --regenerate
 cc="${RISCV_CC:-riscv64-unknown-elf-gcc}"
 for ((t=0;t<tiles;t++)); do
   base=$((0x80000000+t*0x100000))
@@ -45,6 +43,9 @@ reg_root="$(bender path register_interface)"
 bender script vcs --no-default-target -t rtl -t cva6 -t cv64a6_imafdchsclic_sv39_wb \
   -t exclude_first_pass_decoder -D VCS -D SYNTHESIS --vlogan-args="-full64 -timescale=1ns/1ps" \
   > "$out/compile_deps.sh"
+# Bender can restore lockfile revisions while generating the source list.
+bash util/prepare_shared_dma_deps.sh
+bash util/prepare_shared_dma_plic.sh --regenerate
 cd "$out"
 {
   bash compile_deps.sh > build.log 2>&1
@@ -57,4 +58,5 @@ cd "$out"
     "$project_root/target/sim/src/elfloader.cpp" -o simv >> build.log 2>&1
 }
 ./simv +ELF_DIR="$out/elf" > run.log 2>&1
+if grep -E 'Fatal:|Error:' run.log; then exit 1; fi
 grep 'PASS real CVA6' run.log

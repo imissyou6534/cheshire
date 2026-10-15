@@ -7,6 +7,8 @@ module global_ddr_fabric #(
   parameter int unsigned AxiUserWidth = 1,
   parameter int unsigned AxiUserAmoMsb = AxiUserWidth-1,
   parameter int unsigned AxiUserAmoLsb = 0,
+  parameter int unsigned AxiLocalSourceWidth = 0,
+  parameter int unsigned AxiLocalSourceLsb = 0,
   parameter int unsigned MaxTransactions = 32,
   parameter logic [63:0] MemStart = 64'h80000000,
   parameter logic [63:0] MemEnd = 64'h100000000,
@@ -32,9 +34,10 @@ module global_ddr_fabric #(
   typedef logic [AxiUserWidth-1:0] user_t;
   localparam int SourceWidth = (NumMasters>1) ? $clog2(NumMasters) : 1;
   localparam int HartWidth = AxiUserAmoMsb-AxiUserAmoLsb+1;
-  localparam int AtomUserWidth = AxiUserWidth+SourceWidth+HartWidth;
+  localparam int AtomUserWidth = AxiUserWidth+SourceWidth+AxiLocalSourceWidth+HartWidth;
   typedef logic [SourceWidth-1:0] source_t;
   typedef logic [HartWidth-1:0] hart_t;
+  typedef logic [(AxiLocalSourceWidth > 0 ? AxiLocalSourceWidth : 1)-1:0] local_source_t;
   typedef logic [AtomUserWidth-1:0] atom_user_t;
   `AXI_TYPEDEF_ALL(slv, addr_t, id_t, data_t, strb_t, user_t)
   `AXI_TYPEDEF_ALL(mst, addr_t, ddr_id_t, data_t, strb_t, user_t)
@@ -51,14 +54,23 @@ module global_ddr_fabric #(
   ddr_rsp_t [0:0] rsp;
   atom_req_t atom_slv_req, atom_mst_req;
   atom_resp_t atom_slv_rsp, atom_mst_rsp;
-  // Reservation keys combine trusted physical master index with the local hart user
+  // Reservation keys include global and local physical sources plus the hart user
   // field. AXI transaction IDs alone need not match between a CPU's LR and SC.
   always_comb begin
     `AXI_SET_REQ_STRUCT(atom_slv_req, req[0])
-    atom_slv_req.aw.user={source_t'(req[0].aw.id >> AxiIdWidth),
-      hart_t'(user_t'(req[0].aw.user) >> AxiUserAmoLsb),req[0].aw.user};
-    atom_slv_req.ar.user={source_t'(req[0].ar.id >> AxiIdWidth),
-      hart_t'(user_t'(req[0].ar.user) >> AxiUserAmoLsb),req[0].ar.user};
+    if (AxiLocalSourceWidth > 0) begin
+      atom_slv_req.aw.user={source_t'(req[0].aw.id >> AxiIdWidth),
+        local_source_t'(req[0].aw.id >> AxiLocalSourceLsb),
+        hart_t'(user_t'(req[0].aw.user) >> AxiUserAmoLsb),req[0].aw.user};
+      atom_slv_req.ar.user={source_t'(req[0].ar.id >> AxiIdWidth),
+        local_source_t'(req[0].ar.id >> AxiLocalSourceLsb),
+        hart_t'(user_t'(req[0].ar.user) >> AxiUserAmoLsb),req[0].ar.user};
+    end else begin
+      atom_slv_req.aw.user={source_t'(req[0].aw.id >> AxiIdWidth),
+        hart_t'(user_t'(req[0].aw.user) >> AxiUserAmoLsb),req[0].aw.user};
+      atom_slv_req.ar.user={source_t'(req[0].ar.id >> AxiIdWidth),
+        hart_t'(user_t'(req[0].ar.user) >> AxiUserAmoLsb),req[0].ar.user};
+    end
     `AXI_SET_RESP_STRUCT(rsp[0], atom_slv_rsp)
     rsp[0].r.user=user_t'(atom_slv_rsp.r.user);
     rsp[0].b.user=user_t'(atom_slv_rsp.b.user);
@@ -92,6 +104,7 @@ module global_ddr_fabric #(
   initial begin
     assert(NumMasters > 0);
     assert(AxiUserAmoMsb >= AxiUserAmoLsb && AxiUserAmoMsb < AxiUserWidth);
+    assert(AxiLocalSourceLsb+AxiLocalSourceWidth <= AxiIdWidth);
     assert($bits(ddr_req_o.aw.id)==DdrIdWidth && $bits(ddr_rsp_i.r.id)==DdrIdWidth)
       else $fatal(1,"DDR ID width must be AxiIdWidth + clog2(NumMasters)");
     assert($bits(masters_req_i[0].aw.id)==AxiIdWidth);

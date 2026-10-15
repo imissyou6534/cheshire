@@ -7,7 +7,9 @@ module multi_tile_top #(
   parameter int unsigned CompletionDepth = 4,
   parameter logic [63:0] TileBootStride = 0,
   parameter type ddr_req_t = logic,
-  parameter type ddr_rsp_t = logic
+  parameter type ddr_rsp_t = logic,
+  parameter type ext_mst_req_t = logic,
+  parameter type ext_mst_rsp_t = logic
 ) (
   input logic clk_i, rst_ni, testmode_i, rtc_i,
   input logic [NumTiles-1:0][1:0] boot_mode_i,
@@ -17,7 +19,9 @@ module multi_tile_top #(
   output logic [NumTiles-1:0] jtag_tdo_o,
   output logic [NumTiles-1:0] dma_irq_o,
   output ddr_req_t ddr_req_o,
-  input ddr_rsp_t ddr_rsp_i
+  input ddr_rsp_t ddr_rsp_i,
+  input ext_mst_req_t [NumTiles-1:0][cheshire_pkg::iomsb(Cfg.AxiExtNumMst):0] tile_ext_mst_req_i,
+  output ext_mst_rsp_t [NumTiles-1:0][cheshire_pkg::iomsb(Cfg.AxiExtNumMst):0] tile_ext_mst_rsp_o
 );
   `include "cheshire/typedef.svh"
   `CHESHIRE_TYPEDEF_ALL(tile_, Cfg)
@@ -33,6 +37,18 @@ module multi_tile_top #(
   endfunction
   for (genvar t=0;t<NumTiles;t++) begin : gen_tiles
     localparam cheshire_pkg::cheshire_cfg_t TileCfg=tile_boot_cfg(t);
+    tile_axi_mst_req_t [cheshire_pkg::iomsb(Cfg.AxiExtNumMst):0] ext_req;
+    tile_axi_mst_rsp_t [cheshire_pkg::iomsb(Cfg.AxiExtNumMst):0] ext_rsp;
+    if (Cfg.AxiExtNumMst > 0) begin : gen_ext_master
+      assign ext_req = tile_ext_mst_req_i[t];
+      assign tile_ext_mst_rsp_o[t] = ext_rsp;
+      initial assert($bits(ext_mst_req_t) == $bits(tile_axi_mst_req_t) &&
+        $bits(ext_mst_rsp_t) == $bits(tile_axi_mst_rsp_t))
+        else $fatal(1, "external tile master types must match the tile configuration");
+    end else begin : gen_no_ext_master
+      assign ext_req = '0;
+      assign tile_ext_mst_rsp_o[t] = '0;
+    end
     cheshire_soc #(
       .Cfg(TileCfg), .LlcSharedAtomics(1'b1),
       .axi_ext_llc_req_t(tile_axi_llc_req_t), .axi_ext_llc_rsp_t(tile_axi_llc_rsp_t),
@@ -42,7 +58,7 @@ module multi_tile_top #(
     ) i_soc (
       .clk_i, .rst_ni, .test_mode_i(testmode_i), .boot_mode_i(boot_mode_i[t]), .rtc_i,
       .axi_llc_mst_req_o(mem_req[t]), .axi_llc_mst_rsp_i(mem_rsp[t]),
-      .axi_ext_mst_req_i('0), .axi_ext_mst_rsp_o(),
+      .axi_ext_mst_req_i(ext_req), .axi_ext_mst_rsp_o(ext_rsp),
       .axi_ext_slv_req_o(ctrl_req[t]), .axi_ext_slv_rsp_i(ctrl_rsp[t]),
       .reg_ext_slv_req_o(), .reg_ext_slv_rsp_i('0),
       .intr_ext_i(dma_irq_o[t]), .intr_ext_o(), .xeip_ext_o(), .mtip_ext_o(), .msip_ext_o(),
@@ -65,6 +81,8 @@ module multi_tile_top #(
     .AxiDataWidth(Cfg.AxiDataWidth), .AxiIdWidth($bits(tile_axi_llc_id_t)),
     .AxiSlvIdWidth($bits(tile_axi_slv_id_t)), .AxiUserWidth(Cfg.AxiUserWidth),
     .AxiUserAmoMsb(Cfg.AxiUserAmoMsb), .AxiUserAmoLsb(Cfg.AxiUserAmoLsb),
+    .AxiLocalSourceWidth($bits(tile_axi_slv_id_t)-Cfg.AxiMstIdWidth),
+    .AxiLocalSourceLsb(Cfg.AxiMstIdWidth),
     .JobFifoDepth(Cfg.DmaJobFifoDepth), .CompletionDepth(CompletionDepth),
     .NumAxInFlight(Cfg.DmaNumAxInFlight), .MemSysDepth(Cfg.DmaMemSysDepth),
     .RAWCouplingAvail(Cfg.DmaRAWCouplingAvail),
@@ -79,8 +97,9 @@ module multi_tile_top #(
   initial begin
     assert(NumTiles>0 && NumDmas>0);
     assert(TileBootStride==0 || !Cfg.Bootrom);
-    assert(!Cfg.Dma && Cfg.LlcOutConnect && !Cfg.LlcNotBypass && Cfg.AxiExtNumSlv==1);
-    assert(Cfg.AxiExtNumMst==0 && Cfg.RegExtNumSlv==0 && Cfg.NumExtInIntrs==1);
+    assert(!Cfg.Dma && Cfg.LlcOutConnect && Cfg.AxiExtNumSlv==1);
+    assert(!Cfg.LlcNotBypass || Cfg.LlcSpmPrivate);
+    assert(Cfg.RegExtNumSlv==0 && Cfg.NumExtInIntrs==1);
     assert(!Cfg.Usb && !Cfg.SerialLink && !Cfg.Vga && !Cfg.I2c && !Cfg.SpiHost && !Cfg.Gpio);
   end
 endmodule

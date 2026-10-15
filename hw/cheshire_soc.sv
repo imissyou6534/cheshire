@@ -111,6 +111,7 @@ module cheshire_soc import cheshire_pkg::*; #(
 );
 
   `include "axi/typedef.svh"
+  `include "axi/assign.svh"
   `include "common_cells/registers.svh"
   `include "common_cells/assertions.svh"
   `include "cheshire/typedef.svh"
@@ -226,8 +227,31 @@ module cheshire_soc import cheshire_pkg::*; #(
   // Connectivity of Xbar
   axi_mst_req_t [AxiIn.num_in-1:0]    axi_in_req, axi_rt_in_req;
   axi_mst_rsp_t [AxiIn.num_in-1:0]    axi_in_rsp, axi_rt_in_rsp;
+  axi_mst_req_t [AxiIn.num_in-1:0]    axi_guarded_in_req;
+  axi_mst_rsp_t [AxiIn.num_in-1:0]    axi_guarded_in_rsp;
   axi_slv_req_t [AxiOut.num_out-1:0]  axi_out_req;
   axi_slv_rsp_t [AxiOut.num_out-1:0]  axi_out_rsp;
+
+  for (genvar s=0; s<AxiIn.num_in; s++) begin : gen_core_lrsc_guard
+    if (Cfg.LlcSpmPrivate && s<Cfg.NumCores) begin : gen_guard
+      cheshire_core_lrsc_guard #(
+        .AddrWidth(Cfg.AddrWidth), .IdWidth(Cfg.AxiMstIdWidth),
+        .UserIdMsb(Cfg.AxiUserAmoMsb), .UserIdLsb(Cfg.AxiUserAmoLsb),
+        .MaxTrans(Cfg.AxiMaxSlvTrans), .SpmBase(AmSpm),
+        .SpmUncachedBase(AmSpmBaseUncached), .SpmRegionMask(AmSpmRegionMask),
+        .aw_chan_t(axi_mst_aw_chan_t), .w_chan_t(axi_mst_w_chan_t),
+        .b_chan_t(axi_mst_b_chan_t), .ar_chan_t(axi_mst_ar_chan_t),
+        .r_chan_t(axi_mst_r_chan_t), .req_t(axi_mst_req_t), .rsp_t(axi_mst_rsp_t)
+      ) i_guard (
+        .clk_i, .rst_ni, .test_i(test_mode_i),
+        .slv_req_i(axi_rt_in_req[s]), .slv_rsp_o(axi_rt_in_rsp[s]),
+        .mst_req_o(axi_guarded_in_req[s]), .mst_rsp_i(axi_guarded_in_rsp[s])
+      );
+    end else begin : gen_passthrough
+      assign axi_guarded_in_req[s] = axi_rt_in_req[s];
+      assign axi_rt_in_rsp[s] = axi_guarded_in_rsp[s];
+    end
+  end
 
   // Configure AXI Xbar
   localparam axi_pkg::xbar_cfg_t AxiXbarCfg = '{
@@ -268,8 +292,8 @@ module cheshire_soc import cheshire_pkg::*; #(
     .clk_i,
     .rst_ni,
     .test_i                 ( test_mode_i ),
-    .slv_ports_req_i        ( axi_rt_in_req ),
-    .slv_ports_resp_o       ( axi_rt_in_rsp ),
+    .slv_ports_req_i        ( axi_guarded_in_req ),
+    .slv_ports_resp_o       ( axi_guarded_in_rsp ),
     .mst_ports_req_o        ( axi_out_req ),
     .mst_ports_resp_i       ( axi_out_rsp ),
     .addr_map_i             ( AxiMap ),
@@ -444,8 +468,14 @@ module cheshire_soc import cheshire_pkg::*; #(
 
   axi_slv_req_t axi_llc_cut_req;
   axi_slv_rsp_t axi_llc_cut_rsp;
+  localparam int SpmSourceWidth = (AxiIn.num_in > 1) ? $clog2(AxiIn.num_in) : 1;
+  localparam int SpmHartWidth = Cfg.AxiUserAmoMsb-Cfg.AxiUserAmoLsb+1;
+  localparam int SpmAtomUserWidth = Cfg.AxiUserWidth+SpmSourceWidth+SpmHartWidth;
+  typedef logic [SpmAtomUserWidth-1:0] spm_atom_user_t;
+  `CHESHIRE_TYPEDEF_AXI_CT(spm_atom, addr_t, axi_slv_id_t,
+    axi_data_t, axi_strb_t, spm_atom_user_t)
 
-  if (Cfg.LlcOutConnect && !LlcSharedAtomics) begin : gen_llc_atomics
+  if (Cfg.LlcOutConnect && !LlcSharedAtomics && !Cfg.LlcSpmPrivate) begin : gen_llc_atomics
 
     axi_slv_req_t axi_llc_amo_req;
     axi_slv_rsp_t axi_llc_amo_rsp;
@@ -495,14 +525,140 @@ module cheshire_soc import cheshire_pkg::*; #(
 
   end
 
-  if (Cfg.LlcOutConnect && LlcSharedAtomics) begin : gen_shared_llc_atomics
+  if (Cfg.LlcOutConnect && LlcSharedAtomics && !Cfg.LlcSpmPrivate) begin : gen_shared_llc_atomics
     assign axi_llc_cut_req = axi_out_req[AxiOut.llc];
     assign axi_out_rsp[AxiOut.llc] = axi_llc_cut_rsp;
     initial assert(!Cfg.LlcNotBypass)
       else $fatal(1,"Shared LLC atomics require LLC bypass");
   end
 
-  if (Cfg.LlcOutConnect && Cfg.LlcNotBypass) begin : gen_llc
+  if (Cfg.LlcSpmPrivate) begin : gen_private_spm
+    localparam int AtomUserWidth = SpmAtomUserWidth;
+    localparam logic [63:0] WayMask = (64'd1 << Cfg.LlcSetAssoc)-1;
+    typedef logic [SpmSourceWidth-1:0] source_t;
+    typedef logic [SpmHartWidth-1:0] hart_t;
+    axi_slv_req_t spm_req, spm_mem_req, spm_cut_req;
+    axi_slv_rsp_t spm_rsp, spm_mem_rsp, spm_cut_rsp;
+    axi_ext_llc_req_t unexpected_req;
+    axi_ext_llc_rsp_t unexpected_rsp;
+    spm_atom_req_t atom_slv_req, atom_mst_req;
+    spm_atom_rsp_t atom_slv_rsp, atom_mst_rsp;
+    reg_req_t spm_conf_req;
+    reg_rsp_t spm_conf_rsp;
+
+    // Normalize aliases before reservation tracking, not just before SRAM decode.
+    always_comb begin
+      spm_req = axi_out_req[AxiOut.spm];
+      if ((spm_req.aw.addr & ~AmSpmRegionMask) == (AmSpmBaseUncached & ~AmSpmRegionMask))
+        spm_req.aw.addr = addr_t'(AmSpm | (AmSpmRegionMask & spm_req.aw.addr));
+      if ((spm_req.ar.addr & ~AmSpmRegionMask) == (AmSpmBaseUncached & ~AmSpmRegionMask))
+        spm_req.ar.addr = addr_t'(AmSpm | (AmSpmRegionMask & spm_req.ar.addr));
+      `AXI_SET_REQ_STRUCT(atom_slv_req, spm_req)
+      atom_slv_req.aw.user = {source_t'(spm_req.aw.id >> Cfg.AxiMstIdWidth),
+        hart_t'(spm_req.aw.user >> Cfg.AxiUserAmoLsb), spm_req.aw.user};
+      atom_slv_req.ar.user = {source_t'(spm_req.ar.id >> Cfg.AxiMstIdWidth),
+        hart_t'(spm_req.ar.user >> Cfg.AxiUserAmoLsb), spm_req.ar.user};
+      `AXI_SET_RESP_STRUCT(spm_rsp, atom_slv_rsp)
+      axi_out_rsp[AxiOut.spm] = spm_rsp;
+      `AXI_SET_REQ_STRUCT(spm_mem_req, atom_mst_req)
+      `AXI_SET_RESP_STRUCT(atom_mst_rsp, spm_mem_rsp)
+    end
+
+    axi_riscv_atomics_structs #(
+      .AxiAddrWidth(Cfg.AddrWidth), .AxiDataWidth(Cfg.AxiDataWidth),
+      .AxiIdWidth(AxiSlvIdWidth), .AxiUserWidth(AtomUserWidth),
+      .AxiMaxReadTxns(Cfg.LlcMaxReadTxns), .AxiMaxWriteTxns(Cfg.LlcMaxWriteTxns),
+      .AxiUserAsId(1), .AxiUserIdMsb(AtomUserWidth-1), .AxiUserIdLsb(Cfg.AxiUserWidth),
+      .RiscvWordWidth(64), .NAxiCuts(Cfg.LlcAmoNumCuts),
+      .axi_req_t(spm_atom_req_t), .axi_rsp_t(spm_atom_rsp_t)
+    ) i_spm_atomics (
+      .clk_i, .rst_ni, .axi_slv_req_i(atom_slv_req), .axi_slv_rsp_o(atom_slv_rsp),
+      .axi_mst_req_o(atom_mst_req), .axi_mst_rsp_i(atom_mst_rsp)
+    );
+    axi_cut #(
+      .Bypass(~Cfg.LlcAmoPostCut), .aw_chan_t(axi_slv_aw_chan_t),
+      .w_chan_t(axi_slv_w_chan_t), .b_chan_t(axi_slv_b_chan_t),
+      .ar_chan_t(axi_slv_ar_chan_t), .r_chan_t(axi_slv_r_chan_t),
+      .axi_req_t(axi_slv_req_t), .axi_resp_t(axi_slv_rsp_t)
+    ) i_spm_cut (
+      .clk_i, .rst_ni, .slv_req_i(spm_mem_req), .slv_resp_o(spm_mem_rsp),
+      .mst_req_o(spm_cut_req), .mst_resp_i(spm_cut_rsp)
+    );
+
+    // Reject software attempts to turn program SRAM back into cache ways.
+    always_comb begin
+      logic [31:0] required, byte_mask;
+      logic illegal;
+      required = '0;
+      if (reg_out_req[RegOut.llc].addr[6:0] == 7'h00) required = WayMask[31:0];
+      if (reg_out_req[RegOut.llc].addr[6:0] == 7'h04) required = WayMask[63:32];
+      byte_mask = '0;
+      for (int b=0; b<4; b++)
+        byte_mask[b*8+:8] = {8{reg_out_req[RegOut.llc].wstrb[b]}};
+      illegal = reg_out_req[RegOut.llc].valid && reg_out_req[RegOut.llc].write &&
+        ((reg_out_req[RegOut.llc].wdata & required & byte_mask) != (required & byte_mask));
+      spm_conf_req = reg_out_req[RegOut.llc];
+      reg_out_rsp[RegOut.llc] = spm_conf_rsp;
+      if (illegal) begin
+        spm_conf_req.valid = 0;
+        reg_out_rsp[RegOut.llc] = '0;
+        reg_out_rsp[RegOut.llc].ready = 1;
+        reg_out_rsp[RegOut.llc].error = 1;
+      end
+      // The 64-to-32 register bridge reads both words, including reserved high halves.
+      if (!reg_out_req[RegOut.llc].write &&
+          (reg_out_req[RegOut.llc].addr[6:0] == 7'h14 ||
+           reg_out_req[RegOut.llc].addr[6:0] == 7'h4c)) begin
+        spm_conf_req.valid = 0;
+        reg_out_rsp[RegOut.llc] = '0;
+        reg_out_rsp[RegOut.llc].ready = 1;
+      end
+    end
+    axi_llc_reg_wrap #(
+      .SetAssociativity(Cfg.LlcSetAssoc), .NumLines(Cfg.LlcNumLines),
+      .NumBlocks(Cfg.LlcNumBlocks), .AxiIdWidth(AxiSlvIdWidth),
+      .AxiAddrWidth(Cfg.AddrWidth), .AxiDataWidth(Cfg.AxiDataWidth),
+      .AxiUserWidth(Cfg.AxiUserWidth), .slv_req_t(axi_slv_req_t),
+      .slv_resp_t(axi_slv_rsp_t), .mst_req_t(axi_ext_llc_req_t),
+      .mst_resp_t(axi_ext_llc_rsp_t), .reg_req_t(reg_req_t),
+      .reg_resp_t(reg_rsp_t), .rule_full_t(addr_rule_t)
+    ) i_spm (
+      .clk_i, .rst_ni, .test_i(test_mode_i),
+      .slv_req_i(spm_cut_req), .slv_resp_o(spm_cut_rsp),
+      .mst_req_o(unexpected_req), .mst_resp_i(unexpected_rsp),
+      .conf_req_i(spm_conf_req), .conf_resp_o(spm_conf_rsp),
+      .cached_start_addr_i(addr_t'(Cfg.LlcOutRegionStart)),
+      .cached_end_addr_i(addr_t'(Cfg.LlcOutRegionEnd)),
+      .spm_start_addr_i(addr_t'(AmSpm)), .axi_llc_events_o()
+    );
+    axi_err_slv #(
+      .AxiIdWidth($bits(axi_llc_id_t)), .axi_req_t(axi_ext_llc_req_t),
+      .axi_resp_t(axi_ext_llc_rsp_t), .Resp(axi_pkg::RESP_SLVERR),
+      .ATOPs(0), .MaxTrans(Cfg.LlcMaxReadTxns)
+    ) i_unexpected_spm_master (
+      .clk_i, .rst_ni, .test_i(test_mode_i),
+      .slv_req_i(unexpected_req), .slv_resp_o(unexpected_rsp)
+    );
+
+    // Retain the existing external interface width; the former LLC mux bit is zero.
+    always_comb begin
+      `AXI_SET_REQ_STRUCT(axi_llc_mst_req_o, axi_out_req[AxiOut.llc])
+      `AXI_SET_RESP_STRUCT(axi_out_rsp[AxiOut.llc], axi_llc_mst_rsp_i)
+    end
+    initial begin
+      assert(Cfg.LlcOutConnect && Cfg.LlcNotBypass && LlcSharedAtomics);
+      assert(AxiOut.spm != AxiOut.llc);
+      assert(Cfg.LlcSetAssoc > 0 && Cfg.LlcSetAssoc <= 64);
+    end
+    assert property (@(posedge clk_i) disable iff(!rst_ni)
+      !(unexpected_req.aw_valid || unexpected_req.ar_valid))
+      else $fatal(1, "private SPM attempted an external memory transaction");
+    assert property (@(posedge clk_i) disable iff(!rst_ni)
+      (!axi_llc_mst_rsp_i.b_valid || !axi_llc_mst_rsp_i.b.id[$bits(axi_llc_id_t)-1]) &&
+      (!axi_llc_mst_rsp_i.r_valid || !axi_llc_mst_rsp_i.r.id[$bits(axi_llc_id_t)-1]))
+      else $fatal(1, "DDR response contains a nonzero private-SPM padding ID bit");
+
+  end else if (Cfg.LlcOutConnect && Cfg.LlcNotBypass) begin : gen_llc
 
     axi_slv_req_t axi_llc_remap_req;
     axi_slv_rsp_t axi_llc_remap_rsp;

@@ -9,6 +9,8 @@ module cheshire_shared_dma_subsystem #(
   parameter int unsigned AxiUserWidth = 1,
   parameter int unsigned AxiUserAmoMsb = AxiUserWidth-1,
   parameter int unsigned AxiUserAmoLsb = 0,
+  parameter int unsigned AxiLocalSourceWidth = 0,
+  parameter int unsigned AxiLocalSourceLsb = 0,
   parameter int unsigned JobFifoDepth = 2,
   parameter int unsigned CompletionDepth = 4,
   parameter int unsigned NumAxInFlight = 16,
@@ -53,6 +55,7 @@ module cheshire_shared_dma_subsystem #(
     .NumMasters(NumTiles+NumDmas), .AxiAddrWidth(AxiAddrWidth), .AxiDataWidth(AxiDataWidth),
     .AxiIdWidth(AxiIdWidth), .AxiUserWidth(AxiUserWidth),
     .AxiUserAmoMsb(AxiUserAmoMsb), .AxiUserAmoLsb(AxiUserAmoLsb),
+    .AxiLocalSourceWidth(AxiLocalSourceWidth), .AxiLocalSourceLsb(AxiLocalSourceLsb),
     .MaxTransactions(NumAxInFlight), .MemStart(MemStart), .MemEnd(MemEnd),
     .axi_req_t(axi_req_t), .axi_rsp_t(axi_rsp_t), .ddr_req_t(ddr_req_t), .ddr_rsp_t(ddr_rsp_t)
   ) i_fabric (

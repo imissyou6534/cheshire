@@ -156,6 +156,10 @@ CHS_PHONY += chs-shared-dma-system-test
 chs-shared-dma-system-test:
 	bash $(CHS_ROOT)/util/run_shared_dma_system.sh
 
+CHS_PHONY += chs-private-spm-system-test
+chs-private-spm-system-test:
+	bash $(CHS_ROOT)/util/run_private_spm_system.sh
+
 $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: $(CHS_ROOT)/Bender.yml
 	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
 	$(BENDER) script vsim -t sim -t test $(CHS_BENDER_RTL_FLAGS) --vlog-arg="$(VLOG_ARGS)" > $@

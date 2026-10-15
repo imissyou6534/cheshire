@@ -42,6 +42,7 @@ sources:
   - hw/bootrom/cheshire_bootrom.sv
   - hw/regs/cheshire_reg_pkg.sv
   - hw/regs/cheshire_reg_top.sv
+  - hw/shared_dma/cheshire_core_lrsc_guard.sv
   - hw/shared_dma/cheshire_dma_pkg.sv
   - hw/shared_dma/dma_tile_frontend.sv
   - hw/shared_dma/dma_job_scheduler.sv
@@ -77,6 +78,12 @@ sources:
   - target: shared_dma_system_test
     files:
       - target/sim/src/tb_shared_dma_system.sv
+
+  - target: private_spm_test
+    files:
+      - target/sim/src/tb_cheshire_pkg.sv
+      - target/sim/src/tb_private_spm_map.sv
+      - target/sim/src/tb_private_spm_system.sv
 
   - target: any(simulation, test)
     files:

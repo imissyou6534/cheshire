@@ -33,6 +33,28 @@ module fixture_cheshire_soc #(
 
   axi_llc_req_t axi_llc_mst_req;
   axi_llc_rsp_t axi_llc_mst_rsp;
+  axi_llc_req_t soc_llc_req;
+  axi_llc_rsp_t soc_llc_rsp;
+
+  if (DutCfg.LlcSpmPrivate) begin : gen_private_spm_ddr
+    global_ddr_fabric #(
+      .NumMasters(1), .AxiAddrWidth(DutCfg.AddrWidth), .AxiDataWidth(DutCfg.AxiDataWidth),
+      .AxiIdWidth($bits(axi_llc_id_t)), .AxiUserWidth(DutCfg.AxiUserWidth),
+      .AxiUserAmoMsb(DutCfg.AxiUserAmoMsb), .AxiUserAmoLsb(DutCfg.AxiUserAmoLsb),
+      .AxiLocalSourceWidth($bits(axi_slv_id_t)-DutCfg.AxiMstIdWidth),
+      .AxiLocalSourceLsb(DutCfg.AxiMstIdWidth), .MaxTransactions(DutCfg.LlcMaxReadTxns),
+      .MemStart(DutCfg.LlcOutRegionStart), .MemEnd(DutCfg.LlcOutRegionEnd),
+      .axi_req_t(axi_llc_req_t), .axi_rsp_t(axi_llc_rsp_t),
+      .ddr_req_t(axi_llc_req_t), .ddr_rsp_t(axi_llc_rsp_t)
+    ) i_ddr_fabric (
+      .clk_i(clk), .rst_ni(rst_n), .testmode_i(test_mode),
+      .masters_req_i({soc_llc_req}), .masters_rsp_o({soc_llc_rsp}),
+      .ddr_req_o(axi_llc_mst_req), .ddr_rsp_i(axi_llc_mst_rsp)
+    );
+  end else begin : gen_legacy_ddr
+    assign axi_llc_mst_req = soc_llc_req;
+    assign soc_llc_rsp = axi_llc_mst_rsp;
+  end
 
   logic jtag_tck;
   logic jtag_trst_n;
@@ -65,6 +87,7 @@ module fixture_cheshire_soc #(
 
   cheshire_soc #(
     .Cfg                ( DutCfg ),
+    .LlcSharedAtomics   ( DutCfg.LlcSpmPrivate ),
     .ExtHartinfo        ( '0 ),
     .axi_ext_llc_req_t  ( axi_llc_req_t ),
     .axi_ext_llc_rsp_t  ( axi_llc_rsp_t ),
@@ -80,8 +103,8 @@ module fixture_cheshire_soc #(
     .test_mode_i        ( test_mode ),
     .boot_mode_i        ( boot_mode ),
     .rtc_i              ( rtc       ),
-    .axi_llc_mst_req_o  ( axi_llc_mst_req ),
-    .axi_llc_mst_rsp_i  ( axi_llc_mst_rsp ),
+    .axi_llc_mst_req_o  ( soc_llc_req ),
+    .axi_llc_mst_rsp_i  ( soc_llc_rsp ),
     .axi_ext_mst_req_i  ( '0 ),
     .axi_ext_mst_rsp_o  ( ),
     .axi_ext_slv_req_o  ( ),
