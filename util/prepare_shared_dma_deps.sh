@@ -4,7 +4,12 @@ cd "$(dirname "$0")/.."
 idma_path="$(bender path idma)"
 patch_path="$(pwd)/util/patches/idma-0.6.3-page-width.patch"
 for source_file in target/rtl/idma_legalizer_rw_axi.sv \
-    src/backend/tpl/idma_legalizer.sv.tpl target/rtl/idma_generated.sv; do
+    src/backend/tpl/idma_legalizer.sv.tpl target/rtl/idma_generated.sv \
+    target/rtl/idma_legalizer_r_axi_rw_init_rw_obi.sv \
+    target/rtl/idma_legalizer_r_axi_w_obi.sv \
+    target/rtl/idma_legalizer_r_obi_rw_init_w_axi.sv \
+    target/rtl/idma_legalizer_r_obi_w_axi.sv \
+    target/rtl/idma_legalizer_rw_axi_rw_axis.sv; do
   if git -C "$idma_path" apply --include="$source_file" --reverse --check "$patch_path" 2>/dev/null; then
     continue
   fi

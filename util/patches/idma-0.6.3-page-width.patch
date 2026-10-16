@@ -1,45 +1,266 @@
-diff --git a/target/rtl/idma_legalizer_rw_axi.sv b/target/rtl/idma_legalizer_rw_axi.sv
---- a/target/rtl/idma_legalizer_rw_axi.sv
-+++ b/target/rtl/idma_legalizer_rw_axi.sv
-@@ -125,4 +125,4 @@
-     idma_legalizer_page_splitter #(
-         .OffsetWidth   ( OffsetWidth ),
--        .PageAddrWidth ( PageSize    ),
-+        .PageAddrWidth ( PageAddrWidth ),
-         .addr_t        ( addr_t      ),
-@@ -146,4 +146,4 @@
-     idma_legalizer_page_splitter #(
-         .OffsetWidth   ( OffsetWidth ),
--        .PageAddrWidth ( PageSize    ),
-+        .PageAddrWidth ( PageAddrWidth ),
-         .addr_t        ( addr_t      ),
 diff --git a/src/backend/tpl/idma_legalizer.sv.tpl b/src/backend/tpl/idma_legalizer.sv.tpl
+index cf430ab..ebd638d 100644
 --- a/src/backend/tpl/idma_legalizer.sv.tpl
 +++ b/src/backend/tpl/idma_legalizer.sv.tpl
-@@ -184,4 +184,4 @@
+@@ -183,7 +183,7 @@ ${database[p]['max_beats_per_burst']} * StrbWidth > ${database[p]['page_size']}\
+ % if no_read_bursting or has_page_read_bursting:
      idma_legalizer_page_splitter #(
          .OffsetWidth   ( OffsetWidth ),
 -        .PageAddrWidth ( PageSize    ),
 +        .PageAddrWidth ( PageAddrWidth ),
          .addr_t        ( addr_t      ),
-@@ -262,4 +262,4 @@
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -261,7 +261,7 @@ r_num_bytes_to_pb = r_page_num_bytes_to_pb;
+ % if no_write_bursting or has_page_write_bursting:
      idma_legalizer_page_splitter #(
          .OffsetWidth   ( OffsetWidth ),
 -        .PageAddrWidth ( PageSize    ),
 +        .PageAddrWidth ( PageAddrWidth ),
          .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
 diff --git a/target/rtl/idma_generated.sv b/target/rtl/idma_generated.sv
+index 75143a2..d7f7d29 100644
 --- a/target/rtl/idma_generated.sv
 +++ b/target/rtl/idma_generated.sv
-@@ -2523,4 +2523,4 @@
+@@ -2522,7 +2522,7 @@ module idma_legalizer_rw_axi #(
+     //--------------------------------------
      idma_legalizer_page_splitter #(
          .OffsetWidth   ( OffsetWidth ),
 -        .PageAddrWidth ( PageSize    ),
 +        .PageAddrWidth ( PageAddrWidth ),
          .addr_t        ( addr_t      ),
-@@ -2544,4 +2544,4 @@
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -2543,7 +2543,7 @@ module idma_legalizer_rw_axi #(
+     //--------------------------------------
      idma_legalizer_page_splitter #(
          .OffsetWidth   ( OffsetWidth ),
 -        .PageAddrWidth ( PageSize    ),
 +        .PageAddrWidth ( PageAddrWidth ),
          .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -2946,7 +2946,7 @@ module idma_legalizer_r_obi_w_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -2967,7 +2967,7 @@ module idma_legalizer_r_obi_w_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -3367,7 +3367,7 @@ module idma_legalizer_r_axi_w_obi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -3388,7 +3388,7 @@ module idma_legalizer_r_axi_w_obi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -3786,7 +3786,7 @@ module idma_legalizer_rw_axi_rw_axis #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -3813,7 +3813,7 @@ module idma_legalizer_rw_axi_rw_axis #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -4273,7 +4273,7 @@ module idma_legalizer_r_obi_rw_init_w_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -4300,7 +4300,7 @@ module idma_legalizer_r_obi_rw_init_w_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -4757,7 +4757,7 @@ module idma_legalizer_r_axi_rw_init_rw_obi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -4785,7 +4785,7 @@ module idma_legalizer_r_axi_rw_init_rw_obi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+diff --git a/target/rtl/idma_legalizer_r_axi_rw_init_rw_obi.sv b/target/rtl/idma_legalizer_r_axi_rw_init_rw_obi.sv
+index 3c72c26..2e3300f 100644
+--- a/target/rtl/idma_legalizer_r_axi_rw_init_rw_obi.sv
++++ b/target/rtl/idma_legalizer_r_axi_rw_init_rw_obi.sv
+@@ -128,7 +128,7 @@ module idma_legalizer_r_axi_rw_init_rw_obi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -156,7 +156,7 @@ module idma_legalizer_r_axi_rw_init_rw_obi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+diff --git a/target/rtl/idma_legalizer_r_axi_w_obi.sv b/target/rtl/idma_legalizer_r_axi_w_obi.sv
+index a208906..5146504 100644
+--- a/target/rtl/idma_legalizer_r_axi_w_obi.sv
++++ b/target/rtl/idma_legalizer_r_axi_w_obi.sv
+@@ -128,7 +128,7 @@ module idma_legalizer_r_axi_w_obi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -149,7 +149,7 @@ module idma_legalizer_r_axi_w_obi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+diff --git a/target/rtl/idma_legalizer_r_obi_rw_init_w_axi.sv b/target/rtl/idma_legalizer_r_obi_rw_init_w_axi.sv
+index d6a770b..413dd6d 100644
+--- a/target/rtl/idma_legalizer_r_obi_rw_init_w_axi.sv
++++ b/target/rtl/idma_legalizer_r_obi_rw_init_w_axi.sv
+@@ -128,7 +128,7 @@ module idma_legalizer_r_obi_rw_init_w_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -155,7 +155,7 @@ module idma_legalizer_r_obi_rw_init_w_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+diff --git a/target/rtl/idma_legalizer_r_obi_w_axi.sv b/target/rtl/idma_legalizer_r_obi_w_axi.sv
+index f0117e1..b8ed108 100644
+--- a/target/rtl/idma_legalizer_r_obi_w_axi.sv
++++ b/target/rtl/idma_legalizer_r_obi_w_axi.sv
+@@ -128,7 +128,7 @@ module idma_legalizer_r_obi_w_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -149,7 +149,7 @@ module idma_legalizer_r_obi_w_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+diff --git a/target/rtl/idma_legalizer_rw_axi.sv b/target/rtl/idma_legalizer_rw_axi.sv
+index d712395..a2621c6 100644
+--- a/target/rtl/idma_legalizer_rw_axi.sv
++++ b/target/rtl/idma_legalizer_rw_axi.sv
+@@ -124,7 +124,7 @@ module idma_legalizer_rw_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -145,7 +145,7 @@ module idma_legalizer_rw_axi #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+diff --git a/target/rtl/idma_legalizer_rw_axi_rw_axis.sv b/target/rtl/idma_legalizer_rw_axi_rw_axis.sv
+index 83fb685..539be2c 100644
+--- a/target/rtl/idma_legalizer_rw_axi_rw_axis.sv
++++ b/target/rtl/idma_legalizer_rw_axi_rw_axis.sv
+@@ -128,7 +128,7 @@ module idma_legalizer_rw_axi_rw_axis #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
+@@ -155,7 +155,7 @@ module idma_legalizer_rw_axi_rw_axis #(
+     //--------------------------------------
+     idma_legalizer_page_splitter #(
+         .OffsetWidth   ( OffsetWidth ),
+-        .PageAddrWidth ( PageSize    ),
++        .PageAddrWidth ( PageAddrWidth ),
+         .addr_t        ( addr_t      ),
+         .page_len_t    ( page_len_t  ),
+         .page_addr_t   ( page_addr_t )
