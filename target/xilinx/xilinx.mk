@@ -87,6 +87,30 @@ chs-xilinx-multi-tile-vcu118: $(CHS_HW_ALL) $(CHS_MULTITILE_IPS) \
 	    -source $(CHS_XILINX_DIR)/scripts/impl_sys.tcl \
 	    -tclargs vcu118 multi_tile $(CHS_MULTITILE_IPS)
 
+# ROM payload is built before source-list generation; the original ROM is not overwritten.
+CHS_ROM_APP ?=
+CHS_PHONY += chs-rom-autoboot chs-xilinx-multi-tile-rom-vcu118
+chs-rom-autoboot:
+	bash $(CHS_ROOT)/util/build_rom_autoboot.sh --app "$(CHS_ROM_APP)"
+
+chs-xilinx-multi-tile-rom-vcu118: $(CHS_HW_ALL) $(CHS_MULTITILE_IPS) \
+        | $(CHS_XILINX_DIR)/build/vcu118.multi_tile_rom/
+	@test "$(CHS_NUM_TILES)" -ge 1 && test "$(CHS_NUM_TILES)" -le 64
+	@test "$(CHS_NUM_DMAS)" -ge 1 && test "$(CHS_NUM_DMAS)" -le 65536
+	@test "$(CHS_XILINX_SYNTH_ONLY)" = 0 -o "$(CHS_XILINX_SYNTH_ONLY)" = 1
+	@set -e; \
+	    snapshot="$$(bash $(CHS_ROOT)/util/build_rom_autoboot.sh --app "$(CHS_ROM_APP)" --print-snapshot)"; \
+	    $(BENDER) script vivado -t fpga -t vcu118 -t rom_autoboot $(CHS_MULTITILE_RTL_FLAGS) \
+	    --define CHS_NUM_TILES=$(CHS_NUM_TILES) --define CHS_NUM_DMAS=$(CHS_NUM_DMAS) \
+	    > $(CHS_XILINX_DIR)/scripts/add_sources.multi_tile_rom.vcu118.tcl; \
+	    bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh; \
+	    bash $(CHS_ROOT)/util/prepare_shared_dma_plic.sh --check; \
+	    cd $(CHS_XILINX_DIR)/build/vcu118.multi_tile_rom/; \
+	    CHS_ROM_SNAPSHOT="$$snapshot" CHS_XILINX_SYNTH_ONLY=$(CHS_XILINX_SYNTH_ONLY) $(VIVADO) -mode batch \
+	    -log ../multi_tile_rom.vcu118.log -jou ../multi_tile_rom.vcu118.jou \
+	    -source $(CHS_XILINX_DIR)/scripts/impl_sys.tcl \
+	    -tclargs vcu118 multi_tile_rom $(CHS_MULTITILE_IPS)
+
 # Builds bitstreams for all available boards
 CHS_XILINX_ALL = $(foreach board,$(CHS_XILINX_BOARDS),$$(CHS_XILINX_DIR)/out/cheshire.$(board).bit)
 

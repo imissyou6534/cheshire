@@ -39,7 +39,12 @@ export_include_dirs:
 sources:
   - hw/future/UsbOhciAxi4.v
   - hw/future/spinal_usb_ohci.sv
-  - hw/bootrom/cheshire_bootrom.sv
+  - target: not(rom_autoboot)
+    files:
+      - hw/bootrom/cheshire_bootrom.sv
+  - target: rom_autoboot
+    files:
+      - target/rom_autoboot/cheshire_bootrom.sv
   - hw/regs/cheshire_reg_pkg.sv
   - hw/regs/cheshire_reg_top.sv
   - hw/shared_dma/cheshire_core_lrsc_guard.sv
@@ -104,3 +109,7 @@ sources:
   - target: all(fpga, xilinx, vcu118)
     files:
       - target/xilinx/src/multi_tile_top_xilinx.sv
+
+  - target: all(fpga, xilinx, vcu118, rom_autoboot)
+    files:
+      - target/xilinx/src/multi_tile_rom_top_xilinx.sv

@@ -11,21 +11,31 @@
 set xilinx_root [file dirname [file dirname [file normalize [info script]]]]
 source ${xilinx_root}/scripts/common.tcl
 init_impl $xilinx_root $argc $argv
+set is_multi_tile [expr {$proj in {multi_tile multi_tile_rom}}]
 
 # Addtional args provide IPs
 read_ip [exec realpath {*}[lrange $argv 2 end]]
 
 # Load constraints
-import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${proj}.xdc
-if { $proj eq "multi_tile" } {
-    import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/multi_tile.${board}.xdc
+if { $is_multi_tile } {
+    import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/multi_tile.xdc
+    import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${proj}.${board}.xdc
 } else {
+    import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${proj}.xdc
     import_files -fileset constrs_1 -norecurse ${xilinx_root}/constraints/${board}.xdc
 }
 
 # Load RTL sources
-if { $proj eq "multi_tile" } {
-    source ${xilinx_root}/scripts/add_sources.multi_tile.${board}.tcl
+if { $is_multi_tile } {
+    source ${xilinx_root}/scripts/add_sources.${proj}.${board}.tcl
+    if { $proj eq "multi_tile_rom" } {
+        if { ![info exists ::env(CHS_ROM_SNAPSHOT)] || ![file isfile $::env(CHS_ROM_SNAPSHOT)] } {
+            error "CHS_ROM_SNAPSHOT must identify the immutable ROM image for this build"
+        }
+        set mutable_rom [file normalize ${xilinx_root}/../../target/rom_autoboot/cheshire_bootrom.sv]
+        remove_files [get_files $mutable_rom]
+        add_files -norecurse [file normalize $::env(CHS_ROM_SNAPSHOT)]
+    }
     set coeff_root [file normalize ${xilinx_root}/../../hw/fft/rtl]
     set defines [get_property verilog_define [current_fileset]]
     lappend defines "CHESHIRE_FFT_COEFF_ROOT=\"${coeff_root}\""
@@ -48,7 +58,7 @@ set_property strategy Flow_PerfOptimized_high [get_runs synth_1]
 synth_design -rtl -name rtl_1
 report_clocks -file ${project_root}/clocks.rpt
 
-if { $proj eq "multi_tile" && [info exists ::env(CHS_XILINX_ELAB_ONLY)] &&
+if { $is_multi_tile && [info exists ::env(CHS_XILINX_ELAB_ONLY)] &&
      $::env(CHS_XILINX_ELAB_ONLY) eq "1" } {
     puts "PASS Xilinx RTL elaboration: ${proj} on ${board}"
     return
@@ -62,7 +72,7 @@ open_run synth_1
 # Generate synthesis reports
 gen_reports ${project_root}/reports.synth
 
-if { $proj eq "multi_tile" && [info exists ::env(CHS_XILINX_SYNTH_ONLY)] &&
+if { $is_multi_tile && [info exists ::env(CHS_XILINX_SYNTH_ONLY)] &&
      $::env(CHS_XILINX_SYNTH_ONLY) eq "1" } {
     puts "PASS Xilinx synthesis: ${proj} on ${board}"
     return
@@ -70,10 +80,18 @@ if { $proj eq "multi_tile" && [info exists ::env(CHS_XILINX_SYNTH_ONLY)] &&
 
 # Instantiate debug core and ILAs
 # TODO: debug this
-insert_ilas {soc_clk}
+if { $proj eq "multi_tile_rom" } {
+    insert_ilas {i_platform/soc_clk}
+} else {
+    insert_ilas {soc_clk}
+}
 
 # Set implementation properties
 set_property strategy Performance_ExtraTimingOpt [get_runs impl_1]
+if { $proj eq "multi_tile_rom" } {
+    set_property STEPS.OPT_DESIGN.TCL.PRE \
+        ${xilinx_root}/scripts/apply_multi_tile_rom_reset.tcl [get_runs impl_1]
+}
 
 # Implementation
 launch_runs -jobs $num_jobs impl_1 -to_step write_bitstream
