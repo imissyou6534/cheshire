@@ -90,6 +90,16 @@ sources:
       - target/sim/src/tb_private_spm_map.sv
       - target/sim/src/tb_private_spm_system.sv
 
+  - target: multitile_system_test
+    files:
+      - target/sim/src/vip_multitile.sv
+      - target/sim/src/tb_multitile.sv
+
+  - target: fft_ddr_test
+    files:
+      - target/sim/src/vip_multitile.sv
+      - target/sim/src/tb_fft_ddr.sv
+
   - target: any(simulation, test)
     files:
       - target/sim/models/s25fs512s.v

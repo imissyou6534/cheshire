@@ -79,7 +79,6 @@ chs-xilinx-multi-tile-vcu118: $(CHS_HW_ALL) $(CHS_MULTITILE_IPS) \
 	$(BENDER) script vivado -t fpga -t vcu118 $(CHS_MULTITILE_RTL_FLAGS) \
 	    --define CHS_NUM_TILES=$(CHS_NUM_TILES) --define CHS_NUM_DMAS=$(CHS_NUM_DMAS) \
 	    > $(CHS_XILINX_DIR)/scripts/add_sources.multi_tile.vcu118.tcl
-	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
 	bash $(CHS_ROOT)/util/prepare_shared_dma_plic.sh --check
 	cd $(CHS_XILINX_DIR)/build/vcu118.multi_tile/ && \
 	    CHS_XILINX_SYNTH_ONLY=$(CHS_XILINX_SYNTH_ONLY) $(VIVADO) -mode batch \
@@ -87,11 +86,18 @@ chs-xilinx-multi-tile-vcu118: $(CHS_HW_ALL) $(CHS_MULTITILE_IPS) \
 	    -source $(CHS_XILINX_DIR)/scripts/impl_sys.tcl \
 	    -tclargs vcu118 multi_tile $(CHS_MULTITILE_IPS)
 
-# ROM payload is built before source-list generation; the original ROM is not overwritten.
-CHS_ROM_APP ?=
+# Compile application sources and the loader, then link one ROM/SPM firmware.
+CHS_ROM_APP ?= sw/tests/vector_helloworld.c
+CHS_ROM_EXTRA_SRCS ?=
+CHS_ROM_APP_MARCH ?= rv64gcv_zifencei
+CHS_ROM_CC ?= $(CHS_SW_CC)
+CHS_ROM_BUILD_ARGS = --out "$(CHS_ROOT)/target/rom_autoboot" --app "$(CHS_ROM_APP)" \
+    --cc "$(CHS_ROM_CC)" \
+    --app-march "$(CHS_ROM_APP_MARCH)" \
+    $(foreach source,$(CHS_ROM_EXTRA_SRCS),--extra-source "$(source)")
 CHS_PHONY += chs-rom-autoboot chs-xilinx-multi-tile-rom-vcu118
 chs-rom-autoboot:
-	bash $(CHS_ROOT)/util/build_rom_autoboot.sh --app "$(CHS_ROM_APP)"
+	bash $(CHS_ROOT)/util/build_rom_autoboot.sh $(CHS_ROM_BUILD_ARGS)
 
 chs-xilinx-multi-tile-rom-vcu118: $(CHS_HW_ALL) $(CHS_MULTITILE_IPS) \
         | $(CHS_XILINX_DIR)/build/vcu118.multi_tile_rom/
@@ -99,11 +105,10 @@ chs-xilinx-multi-tile-rom-vcu118: $(CHS_HW_ALL) $(CHS_MULTITILE_IPS) \
 	@test "$(CHS_NUM_DMAS)" -ge 1 && test "$(CHS_NUM_DMAS)" -le 65536
 	@test "$(CHS_XILINX_SYNTH_ONLY)" = 0 -o "$(CHS_XILINX_SYNTH_ONLY)" = 1
 	@set -e; \
-	    snapshot="$$(bash $(CHS_ROOT)/util/build_rom_autoboot.sh --app "$(CHS_ROM_APP)" --print-snapshot)"; \
+	    snapshot="$$(bash $(CHS_ROOT)/util/build_rom_autoboot.sh $(CHS_ROM_BUILD_ARGS) --print-snapshot)"; \
 	    $(BENDER) script vivado -t fpga -t vcu118 -t rom_autoboot $(CHS_MULTITILE_RTL_FLAGS) \
 	    --define CHS_NUM_TILES=$(CHS_NUM_TILES) --define CHS_NUM_DMAS=$(CHS_NUM_DMAS) \
 	    > $(CHS_XILINX_DIR)/scripts/add_sources.multi_tile_rom.vcu118.tcl; \
-	    bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh; \
 	    bash $(CHS_ROOT)/util/prepare_shared_dma_plic.sh --check; \
 	    cd $(CHS_XILINX_DIR)/build/vcu118.multi_tile_rom/; \
 	    CHS_ROM_SNAPSHOT="$$snapshot" CHS_XILINX_SYNTH_ONLY=$(CHS_XILINX_SYNTH_ONLY) $(VIVADO) -mode batch \

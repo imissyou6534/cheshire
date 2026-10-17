@@ -15,11 +15,11 @@ record="$(bash util/build_rom_autoboot.sh --print-record)"
 snapshot="$(python3 -c 'import json, sys; print(json.load(open(sys.argv[1]))["rom_snapshot"])' "$record")"
 negative_snapshot="$(bash util/build_rom_autoboot.sh --out "$out/negative" --bad-checksum --print-snapshot)"
 buffer="$(python3 -c 'import json, sys; print(format(json.load(open(sys.argv[1]))["symbols"]["buf"], "x"))' "$record")"
-bender script vcs --no-default-target -t rtl -t simulation -t test -t cva6 -t rom_autoboot \
+python3 util/rom_bender.py script vcs --no-default-target -t rtl -t simulation -t test -t cva6 -t rom_autoboot \
   -t cv64a6_imafdcv_sv39 -t exclude_first_pass_decoder -D VCS -D SYNTHESIS \
   --vlogan-args="-full64 -timescale=1ns/1ps -assert svaext" > "$out/compile_deps.sh"
-bash util/prepare_shared_dma_deps.sh
-bash util/prepare_shared_dma_plic.sh --regenerate
+# Dependency patches and generated RTL must be prepared before this test.
+bash util/prepare_shared_dma_plic.sh --check
 axi_root="$(bender path axi)"
 reg_root="$(bender path register_interface)"
 common_root="$(bender path common_cells)"

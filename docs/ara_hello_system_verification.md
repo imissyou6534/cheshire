@@ -1,5 +1,11 @@
 # Ara Hello: Private-SPM System Simulation
 
+> Historical verification record. The dedicated `run_ara_hello_system.sh`
+> runner was retired on 2026-10-17. Commands and output below describe the old
+> environment. For current runs, use the common `tb_multitile` environment:
+> `python3 util/run_multitile_sim.py --boot spm --tiles 1 --dmas 1 --uart-tiles all`.
+> See [multitile_simulation.md](multitile_simulation.md) for both boot modes.
+
 ## Hardware and Test Selection
 
 - RTL top: `multi_tile_top` (`hw/shared_dma/multi_tile_top.sv`).

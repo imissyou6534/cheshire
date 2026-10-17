@@ -6,7 +6,18 @@
 # Christopher Reinwardt <creinwar@student.ethz.ch>
 # Paul Scheffler <paulsc@iis.ee.ethz.ch>
 
-BENDER ?= bender
+# Resolve the project without invoking Bender, including when used as a fragment.
+ifndef CHS_ROOT
+CHS_ROOT := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
+endif
+# Command-line BENDER overrides must not bypass prepared dependency protection.
+override BENDER := python3 "$(CHS_ROOT)/util/rom_bender.py"
+export BENDER
+.DELETE_ON_ERROR:
+CHS_DEPS_READY := $(shell $(BENDER) check)
+ifneq ($(CHS_DEPS_READY),prepared)
+$(error Dependency protection: prepared checkouts are missing or ambiguous; no automatic checkout is allowed)
+endif
 VLOGAN ?= vlogan
 
 # Caution: Questasim requires this to point to the *actual* compiler install path
@@ -19,7 +30,6 @@ VLOGAN_ARGS ?= -kdb -nc -assert svaext +v2k -timescale=1ns/1ps
 CHS_BENDER_RTL_FLAGS ?= -t rtl -t cva6 -t cv64a6_imafdchsclic_sv39_wb -t exclude_first_pass_decoder
 
 # Define used paths (prefixed to avoid name conflicts)
-CHS_ROOT      ?= $(shell $(BENDER) path cheshire)
 CHS_REG_DIR   := $(shell $(BENDER) path register_interface)
 CHS_SLINK_DIR := $(shell $(BENDER) path serial_link)
 CHS_LLC_DIR   := $(shell $(BENDER) path axi_llc)
@@ -40,24 +50,16 @@ REGTOOL ?= $(CHS_REG_DIR)/vendor/lowrisc_opentitan/util/regtool.py
 
 BENDER_ROOT ?= $(CHS_ROOT)/.bender
 
-# Ensure both Bender dependencies and (essential) submodules are checked out
+# Dependency installation/reset is deliberately unavailable in this checkout.
+.PHONY: $(BENDER_ROOT)/.chs_deps
 $(BENDER_ROOT)/.chs_deps:
-	$(BENDER) checkout
-	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
-	cd $(CHS_ROOT) && git submodule update --init --recursive sw/deps/printf
-	@touch $@
+	@echo 'Dependency protection: automatic checkout/patch/submodule initialization is disabled.' >&2
+	@exit 2
 
-# Make sure dependencies are more up-to-date than any targets run
-ifeq ($(shell test -f $(BENDER_ROOT)/.chs_deps && echo 1),)
--include $(BENDER_ROOT)/.chs_deps
-endif
-
-# Running this target will reset dependencies (without updating the checked-in Bender.lock)
 CHS_PHONY += chs-clean-deps
 chs-clean-deps:
-	rm -rf .bender
-	cd $(CHS_ROOT) && rm -rf target/sim/models target/sim/dramsys
-	cd $(CHS_ROOT) && git submodule deinit -f sw/deps/*
+	@echo 'Dependency protection: deleting local dependencies is disabled.' >&2
+	@exit 2
 
 ######################
 # Nonfree components #
@@ -87,36 +89,22 @@ include $(CHS_ROOT)/sw/sw.mk
 $(CHS_ROOT)/hw/regs/cheshire_reg_pkg.sv $(CHS_ROOT)/hw/regs/cheshire_reg_top.sv: $(CHS_ROOT)/hw/regs/cheshire_regs.hjson
 	$(REGTOOL) -r $< --outdir $(dir $@)
 
-# CLINT
+# Use prepared dependency RTL. Do not import dependency regeneration recipes.
 CLINTCORES ?= 1
-include $(CLINTROOT)/clint.mk
-$(CLINTROOT)/.generated:
-	flock -x $@ $(MAKE) clint && touch $@
-
-# OpenTitan peripherals
-include $(OTPROOT)/otp.mk
-$(OTPROOT)/.generated: $(CHS_ROOT)/hw/rv_plic.cfg.hjson
-	flock -x $@ sh -c "cp $< $(dir $@)/src/rv_plic/; $(MAKE) -j1 otp" && touch $@
-
-# AXI RT
 AXIRT_NUM_MGRS ?= 6
 AXIRT_NUM_SUBS ?= 2
-include $(AXIRTROOT)/axirt.mk
-$(AXIRTROOT)/.generated:
-	flock -x $@ $(MAKE) -B axirt_regs && touch $@
+IDMA_FULL_RTL := $(IDMA_ROOT)/target/rtl/idma_generated.sv
 
-# AXI VGA
-include $(AXI_VGA_ROOT)/axi_vga.mk
-$(AXI_VGA_ROOT)/.generated:
-	flock -x $@ $(MAKE) axi_vga && touch $@
+CHS_PREPARED_MARKERS := $(CLINTROOT)/.generated $(OTPROOT)/.generated \
+    $(AXIRTROOT)/.generated $(AXI_VGA_ROOT)/.generated $(CHS_SLINK_DIR)/.generated
+$(CHS_PREPARED_MARKERS) $(IDMA_FULL_RTL):
+	@echo 'Dependency protection: missing prepared artifact $@; automatic regeneration is disabled.' >&2
+	@exit 2
 
-# Custom serial link
-$(CHS_SLINK_DIR)/.generated: $(CHS_ROOT)/hw/serial_link.hjson
-	cp $< $(dir $@)/src/regs/serial_link_single_channel.hjson
-	flock -x $@ $(MAKE) -C $(CHS_SLINK_DIR) update-regs BENDER="$(BENDER)" && touch $@
-
-# iDMA
-include $(IDMA_ROOT)/idma.mk
+.PHONY: clint _clint otp _otp axirt_regs axi_vga _axi_vga
+clint _clint otp _otp axirt_regs axi_vga _axi_vga:
+	@echo 'Dependency protection: dependency RTL regeneration is disabled.' >&2
+	@exit 2
 
 CHS_HW_ALL += $(IDMA_FULL_RTL)
 CHS_HW_ALL += $(CHS_ROOT)/hw/regs/cheshire_reg_pkg.sv $(CHS_ROOT)/hw/regs/cheshire_reg_top.sv
@@ -148,25 +136,41 @@ CHS_BOOTROM_ALL += $(CHS_ROOT)/hw/bootrom/cheshire_bootrom.sv $(CHS_ROOT)/hw/boo
 # Simulation #
 ##############
 
+CHS_SIM_BOOT ?= rom
+CHS_SIM_TILES ?= 1
+CHS_SIM_DMAS ?= 1
+CHS_SIM_ARGS ?=
+CHS_FFT_PYTHON ?= python3
+CHS_FFT_ARGS ?=
+CHS_PHONY += chs-fft-ddr-test
+chs-fft-ddr-test:
+	$(CHS_FFT_PYTHON) $(CHS_ROOT)/util/run_fft_ddr_test.py $(CHS_FFT_ARGS)
+
+CHS_PHONY += chs-multitile-sim
+chs-multitile-sim:
+	python3 $(CHS_ROOT)/util/run_multitile_sim.py --boot $(CHS_SIM_BOOT) \
+	    --tiles $(CHS_SIM_TILES) --dmas $(CHS_SIM_DMAS) $(CHS_SIM_ARGS)
+
 CHS_PHONY += chs-shared-dma-test
 chs-shared-dma-test:
-	bash $(CHS_ROOT)/util/run_shared_dma_tests.sh
+	@echo 'Dependency protection: this legacy runner patches dependencies; use chs-multitile-sim for system workloads.' >&2
+	@exit 2
 
 CHS_PHONY += chs-shared-dma-system-test
 chs-shared-dma-system-test:
-	bash $(CHS_ROOT)/util/run_shared_dma_system.sh
+	@echo 'Dependency protection: this legacy runner regenerates dependencies; use chs-multitile-sim.' >&2
+	@exit 2
 
 CHS_PHONY += chs-private-spm-system-test
 chs-private-spm-system-test:
-	bash $(CHS_ROOT)/util/run_private_spm_system.sh
+	@echo 'Dependency protection: this legacy runner regenerates dependencies; use chs-multitile-sim.' >&2
+	@exit 2
 
 $(CHS_ROOT)/target/sim/vsim/compile.cheshire_soc.tcl: $(CHS_ROOT)/Bender.yml
-	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
 	$(BENDER) script vsim -t sim -t test $(CHS_BENDER_RTL_FLAGS) --vlog-arg="$(VLOG_ARGS)" > $@
 	echo 'vlog "$(realpath $(CHS_ROOT))/target/sim/src/elfloader.cpp" -ccflags "-std=c++11" -cpppath "$(CXX_PATH)"' >> $@
 
 $(CHS_ROOT)/target/sim/vcs/compile.cheshire_soc.sh: $(CHS_ROOT)/Bender.yml
-	bash $(CHS_ROOT)/util/prepare_shared_dma_deps.sh
 	$(BENDER) script vcs -t sim -t test $(CHS_BENDER_RTL_FLAGS) --vlog-arg="$(VLOGAN_ARGS)" --vlogan-bin="$(VLOGAN)" > $@
 	chmod +x $@
 

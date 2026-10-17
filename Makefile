@@ -7,7 +7,7 @@
 # Paul Scheffler <paulsc@iis.ee.ethz.ch>
 
 CHS_ROOT := $(shell realpath .)
-BENDER	 ?= bender -d $(CHS_ROOT)
+# cheshire.mk supplies the protected Bender interface for all included rules.
 
 all:
 

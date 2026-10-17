@@ -21,6 +21,7 @@ int main(void) {
     cheshire_start();
     enable_rvv();
 
+    printf("ni hao a, 1017!\r\n");
     const unsigned char str[] = "Hello Vector World!\r\n";
     vuint8m1_t str_v;
 
