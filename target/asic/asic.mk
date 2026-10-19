@@ -20,7 +20,10 @@ CHS_ASIC_CFG ?= 0
 # Synthesis knobs common to all technologies
 CHS_ASIC_CLK_PERIOD     ?= 1500
 CHS_ASIC_THREADS        ?= 8
-CHS_ASIC_NO_AUTOUNGROUP ?= 0
+# Hierarchy kept by synthesis: flat (the tool ungroups freely), blocks (the main
+# blocks of the SoC and of CVA6 stay, so place and route can report area and
+# power per block; scripts/synopsys_optimize.tcl lists them), rtl (all of it)
+CHS_ASIC_HIERARCHY      ?= flat
 # Constraint parameters to override, as NAME=value (see the defaults in
 # constraints/cheshire_asic.sdc), e.g. CHS_ASIC_ONCHIP_EXT_FRAC=0.2
 CHS_ASIC_SDC_PARAMS     ?=
