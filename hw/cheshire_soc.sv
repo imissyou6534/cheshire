@@ -205,6 +205,26 @@ module cheshire_soc import cheshire_pkg::*; #(
   // Define needed parameters
   localparam int unsigned AxiStrbWidth  = Cfg.AxiDataWidth / 8;
   localparam int unsigned AxiSlvIdWidth = Cfg.AxiMstIdWidth + $clog2(AxiIn.num_in);
+  localparam int unsigned CoreDataWidth = Cfg.CoreAxiDataWidth;
+  localparam int unsigned DebugDataWidth = Cfg.DbgAxiDataWidth;
+  localparam int unsigned FftDataWidth = Cfg.FftAxiDataWidth ?
+    Cfg.FftAxiDataWidth : Cfg.AxiDataWidth;
+  typedef logic [CoreDataWidth-1:0] core_data_t;
+  typedef logic [CoreDataWidth/8-1:0] core_strb_t;
+  typedef logic [DebugDataWidth-1:0] debug_data_t;
+  typedef logic [DebugDataWidth/8-1:0] debug_strb_t;
+  typedef logic [FftDataWidth-1:0] fft_data_t;
+  typedef logic [FftDataWidth/8-1:0] fft_strb_t;
+  `CHESHIRE_TYPEDEF_AXI_CT(core_mapped, addr_t, axi_mst_id_t,
+    core_data_t, core_strb_t, axi_user_t)
+  `CHESHIRE_TYPEDEF_AXI_CT(debug_slv, addr_t, axi_slv_id_t,
+    debug_data_t, debug_strb_t, axi_user_t)
+  `CHESHIRE_TYPEDEF_AXI_CT(debug_mst, addr_t, axi_mst_id_t,
+    debug_data_t, debug_strb_t, axi_user_t)
+  `CHESHIRE_TYPEDEF_AXI_CT(periph, addr_t, axi_slv_id_t,
+    logic [63:0], logic [7:0], axi_user_t)
+  `CHESHIRE_TYPEDEF_AXI_CT(fft_native, addr_t, axi_mst_id_t,
+    fft_data_t, fft_strb_t, axi_user_t)
 
   // Type for address map entries
   typedef struct packed {
@@ -339,6 +359,8 @@ module cheshire_soc import cheshire_pkg::*; #(
 
   axi_slv_req_t axi_reg_amo_req, axi_reg_cut_req;
   axi_slv_rsp_t axi_reg_amo_rsp, axi_reg_cut_rsp;
+  periph_req_t periph_req;
+  periph_rsp_t periph_rsp;
 
   reg_req_t reg_in_req;
   reg_rsp_t reg_in_rsp;
@@ -391,23 +413,33 @@ module cheshire_soc import cheshire_pkg::*; #(
     .mst_resp_i ( axi_reg_cut_rsp )
   );
 
-  // Convert from AXI to reg protocol
+  cheshire_axi_dw_bridge #(
+    .SlvDataWidth(Cfg.AxiDataWidth), .MstDataWidth(64),
+    .AddrWidth(Cfg.AddrWidth), .IdWidth(AxiSlvIdWidth), .UserWidth(Cfg.AxiUserWidth),
+    .MaxReads(Cfg.RegMaxReadTxns), .slv_req_t(axi_slv_req_t), .slv_rsp_t(axi_slv_rsp_t),
+    .mst_req_t(periph_req_t), .mst_rsp_t(periph_rsp_t)
+  ) i_periph_width (
+    .clk_i, .rst_ni, .slv_req_i(axi_reg_cut_req), .slv_rsp_o(axi_reg_cut_rsp),
+    .mst_req_o(periph_req), .mst_rsp_i(periph_rsp)
+  );
+
+  // Keep the peripheral register bridge in its existing 64-bit domain.
   axi_to_reg_v2 #(
     .AxiAddrWidth ( Cfg.AddrWidth    ),
-    .AxiDataWidth ( Cfg.AxiDataWidth ),
+    .AxiDataWidth ( 64 ),
     .AxiIdWidth   ( AxiSlvIdWidth    ),
     .AxiUserWidth ( Cfg.AxiUserWidth ),
     .RegDataWidth ( 32 ),
     .CutMemReqs   ( Cfg.RegAdaptMemCut ),
-    .axi_req_t    ( axi_slv_req_t ),
-    .axi_rsp_t    ( axi_slv_rsp_t ),
+    .axi_req_t    ( periph_req_t ),
+    .axi_rsp_t    ( periph_rsp_t ),
     .reg_req_t    ( reg_req_t ),
     .reg_rsp_t    ( reg_rsp_t )
   ) i_axi_to_reg_v2 (
     .clk_i,
     .rst_ni,
-    .axi_req_i ( axi_reg_cut_req ),
-    .axi_rsp_o ( axi_reg_cut_rsp ),
+    .axi_req_i ( periph_req ),
+    .axi_rsp_o ( periph_rsp ),
     .reg_req_o ( reg_in_req ),
     .reg_rsp_i ( reg_in_rsp ),
     .reg_id_o  ( reg_id     ),
@@ -720,7 +752,7 @@ module cheshire_soc import cheshire_pkg::*; #(
   //  Cores  //
   /////////////
 
-  `CHESHIRE_TYPEDEF_AXI_CT(axi_cva6, addr_t, cva6_id_t, axi_data_t, axi_strb_t, axi_user_t)
+  `CHESHIRE_TYPEDEF_AXI_CT(axi_cva6, addr_t, cva6_id_t, core_data_t, core_strb_t, axi_user_t)
 
   localparam config_pkg::cva6_user_cfg_t Cva6UsrCfg = gen_cva6_cfg(Cfg);
   localparam config_pkg::cva6_cfg_t Cva6Cfg = build_config_pkg::build_config(Cva6UsrCfg);
@@ -768,7 +800,8 @@ module cheshire_soc import cheshire_pkg::*; #(
   // Configure Ara with the right AXI id width
   typedef logic [Cfg.AxiMstIdWidth-1:0] ara_id_t;
   // Default Ara AXI data width
-  localparam int unsigned AraDataWideWidth = 32 * Cfg.AraNrLanes;
+  localparam int unsigned AraDataWideWidth = Cfg.AraAxiDataWidth ?
+    Cfg.AraAxiDataWidth : 32 * Cfg.AraNrLanes;
   typedef logic [AraDataWideWidth   -1 : 0] axi_ara_wide_data_t;
   typedef logic [AraDataWideWidth/8 -1 : 0] axi_ara_wide_strb_t;
   `AXI_TYPEDEF_ALL(
@@ -799,8 +832,10 @@ module cheshire_soc import cheshire_pkg::*; #(
   for (genvar i = 0; i < NumIntHarts; i++) begin : gen_cva6_cores
     axi_cva6_req_t core_out_req, core_ur_req;
     axi_cva6_rsp_t core_out_rsp, core_ur_rsp;
-    axi_mst_req_t  axi_fft_req;
-    axi_mst_rsp_t  axi_fft_rsp;
+    fft_native_req_t axi_fft_req;
+    fft_native_rsp_t axi_fft_rsp;
+    core_mapped_req_t core_mapped_req;
+    core_mapped_rsp_t core_mapped_rsp;
 
     // CLIC interface
     logic clic_irq_valid, clic_irq_ready;
@@ -946,13 +981,13 @@ module cheshire_soc import cheshire_pkg::*; #(
       .AxiMstPortMaxUniqIds   ( 2 ** Cfg.AxiMstIdWidth ),
       .AxiMstPortMaxTxnsPerId ( Cfg.CoreMaxTxnsPerId   ),
       .AxiAddrWidth           ( Cfg.AddrWidth    ),
-      .AxiDataWidth           ( Cfg.AxiDataWidth ),
+      .AxiDataWidth           ( CoreDataWidth ),
       .AxiUserWidth           ( Cfg.AxiUserWidth ),
       .AtopSupport            ( 1 ),
       .slv_req_t              ( axi_cva6_req_t ),
       .slv_resp_t             ( axi_cva6_rsp_t ),
-      .mst_req_t              ( axi_mst_req_t  ),
-      .mst_resp_t             ( axi_mst_rsp_t  ),
+      .mst_req_t              ( core_mapped_req_t ),
+      .mst_resp_t             ( core_mapped_rsp_t ),
       .MstIdBaseOffset        ( '0 ),
       .IdMapNumEntries        ( Cva6IdsUsed ),
       .IdMap                  ( gen_cva6_id_map(Cfg) )
@@ -961,8 +996,18 @@ module cheshire_soc import cheshire_pkg::*; #(
       .rst_ni,
       .slv_req_i  ( core_ur_req ),
       .slv_resp_o ( core_ur_rsp ),
-      .mst_req_o  ( axi_in_req[AxiIn.cores[i]] ),
-      .mst_resp_i ( axi_in_rsp[AxiIn.cores[i]] )
+      .mst_req_o  ( core_mapped_req ),
+      .mst_resp_i ( core_mapped_rsp )
+    );
+
+    cheshire_axi_dw_bridge #(
+      .SlvDataWidth(CoreDataWidth), .MstDataWidth(Cfg.AxiDataWidth),
+      .AddrWidth(Cfg.AddrWidth), .IdWidth(Cfg.AxiMstIdWidth), .UserWidth(Cfg.AxiUserWidth),
+      .MaxReads(Cfg.CoreMaxTxns), .slv_req_t(core_mapped_req_t),
+      .slv_rsp_t(core_mapped_rsp_t), .mst_req_t(axi_mst_req_t), .mst_rsp_t(axi_mst_rsp_t)
+    ) i_core_width (
+      .clk_i, .rst_ni, .slv_req_i(core_mapped_req), .slv_rsp_o(core_mapped_rsp),
+      .mst_req_o(axi_in_req[AxiIn.cores[i]]), .mst_rsp_i(axi_in_rsp[AxiIn.cores[i]])
     );
 
     if (Cfg.Fft) begin : gen_multi_accel_router
@@ -985,7 +1030,7 @@ module cheshire_soc import cheshire_pkg::*; #(
 
       fft_accelerator_ip #(
         .AddrWidth          ( Cfg.AddrWidth       ),
-        .DataWidth          ( Cfg.AxiDataWidth    ),
+        .DataWidth          ( FftDataWidth        ),
         .TransIdWidth       ( Cva6Cfg.TRANS_ID_BITS ),
         .exception_t        ( exception_t         ),
         .accelerator_req_t  ( accelerator_req_t   ),
@@ -993,8 +1038,8 @@ module cheshire_soc import cheshire_pkg::*; #(
         .acc_mmu_req_t      ( acc_mmu_req_t       ),
         .cva6_to_acc_t      ( cva6_to_acc_t       ),
         .acc_to_cva6_t      ( acc_to_cva6_t       ),
-        .axi_req_t          ( axi_mst_req_t       ),
-        .axi_rsp_t          ( axi_mst_rsp_t       )
+        .axi_req_t          ( fft_native_req_t    ),
+        .axi_rsp_t          ( fft_native_rsp_t    )
       ) i_fft_accelerator_ip (
         .clk_i,
         .rst_ni,
@@ -1004,8 +1049,15 @@ module cheshire_soc import cheshire_pkg::*; #(
         .axi_rsp_i  ( axi_fft_rsp  )
       );
 
-      assign axi_in_req[AxiIn.fft] = axi_fft_req;
-      assign axi_fft_rsp           = axi_in_rsp[AxiIn.fft];
+      cheshire_axi_dw_bridge #(
+        .SlvDataWidth(FftDataWidth), .MstDataWidth(Cfg.AxiDataWidth),
+        .AddrWidth(Cfg.AddrWidth), .IdWidth(Cfg.AxiMstIdWidth), .UserWidth(Cfg.AxiUserWidth),
+        .MaxReads(8), .slv_req_t(fft_native_req_t), .slv_rsp_t(fft_native_rsp_t),
+        .mst_req_t(axi_mst_req_t), .mst_rsp_t(axi_mst_rsp_t)
+      ) i_fft_width (
+        .clk_i, .rst_ni, .slv_req_i(axi_fft_req), .slv_rsp_o(axi_fft_rsp),
+        .mst_req_o(axi_in_req[AxiIn.fft]), .mst_rsp_i(axi_in_rsp[AxiIn.fft])
+      );
     end else begin : gen_no_fft
       assign acc_req_ara            = acc_req;
       assign acc_resp               = acc_resp_ara;
@@ -1131,22 +1183,22 @@ module cheshire_soc import cheshire_pkg::*; #(
   // Debug module slave interface
   logic       dbg_slv_req;
   addr_t      dbg_slv_addr;
-  axi_data_t  dbg_slv_addr_long;
+  debug_data_t dbg_slv_addr_long;
   logic       dbg_slv_we;
-  axi_data_t  dbg_slv_wdata;
-  axi_strb_t  dbg_slv_wstrb;
-  axi_data_t  dbg_slv_rdata;
+  debug_data_t dbg_slv_wdata;
+  debug_strb_t dbg_slv_wstrb;
+  debug_data_t dbg_slv_rdata;
   logic       dbg_slv_rvalid;
 
   // Debug module system bus access interface
   logic       dbg_sba_req;
   addr_t      dbg_sba_addr;
-  axi_data_t  dbg_sba_addr_long;
+  debug_data_t dbg_sba_addr_long;
   logic       dbg_sba_we;
-  axi_data_t  dbg_sba_wdata;
-  axi_strb_t  dbg_sba_strb;
+  debug_data_t dbg_sba_wdata;
+  debug_strb_t dbg_sba_strb;
   logic       dbg_sba_gnt;
-  axi_data_t  dbg_sba_rdata;
+  debug_data_t dbg_sba_rdata;
   logic       dbg_sba_rvalid;
   logic       dbg_sba_err;
 
@@ -1217,12 +1269,24 @@ module cheshire_soc import cheshire_pkg::*; #(
     .mst_resp_i ( dbg_slv_axi_cut_rsp )
   );
 
+  debug_slv_req_t debug_mem_req;
+  debug_slv_rsp_t debug_mem_rsp;
+  cheshire_axi_dw_bridge #(
+    .SlvDataWidth(Cfg.AxiDataWidth), .MstDataWidth(DebugDataWidth),
+    .AddrWidth(Cfg.AddrWidth), .IdWidth(AxiSlvIdWidth), .UserWidth(Cfg.AxiUserWidth),
+    .MaxReads(Cfg.DbgMaxReadTxns), .slv_req_t(axi_slv_req_t), .slv_rsp_t(axi_slv_rsp_t),
+    .mst_req_t(debug_slv_req_t), .mst_rsp_t(debug_slv_rsp_t)
+  ) i_debug_mem_width (
+    .clk_i, .rst_ni, .slv_req_i(dbg_slv_axi_cut_req), .slv_rsp_o(dbg_slv_axi_cut_rsp),
+    .mst_req_o(debug_mem_req), .mst_rsp_i(debug_mem_rsp)
+  );
+
   // AXI access to debug module
   axi_to_mem_interleaved #(
-    .axi_req_t  ( axi_slv_req_t ),
-    .axi_resp_t ( axi_slv_rsp_t ),
+    .axi_req_t  ( debug_slv_req_t ),
+    .axi_resp_t ( debug_slv_rsp_t ),
     .AddrWidth  ( Cfg.AddrWidth    ),
-    .DataWidth  ( Cfg.AxiDataWidth ),
+    .DataWidth  ( DebugDataWidth ),
     .IdWidth    ( AxiSlvIdWidth    ),
     .NumBanks   ( 1 ),
     .BufDepth   ( 4 )
@@ -1231,8 +1295,8 @@ module cheshire_soc import cheshire_pkg::*; #(
     .rst_ni,
     .test_i       ( test_mode_i ),
     .busy_o       ( ),
-    .axi_req_i    ( dbg_slv_axi_cut_req ),
-    .axi_resp_o   ( dbg_slv_axi_cut_rsp ),
+    .axi_req_i    ( debug_mem_req ),
+    .axi_resp_o   ( debug_mem_rsp ),
     .mem_req_o    ( dbg_slv_req    ),
     .mem_gnt_i    ( dbg_slv_req    ),
     .mem_addr_o   ( dbg_slv_addr   ),
@@ -1250,7 +1314,7 @@ module cheshire_soc import cheshire_pkg::*; #(
   // Debug Module
   dm_top #(
     .NrHarts        ( NumDbgHarts ),
-    .BusWidth       ( Cfg.AxiDataWidth ),
+    .BusWidth       ( DebugDataWidth ),
     .DmBaseAddress  ( AmDbg )
   ) i_dbg_dm_top (
     .clk_i,
@@ -1286,10 +1350,13 @@ module cheshire_soc import cheshire_pkg::*; #(
     .dmi_resp_o           ( dbg_dmi_rsp       )
   );
 
-  axi_mst_req_t axi_dbg_req;
+  debug_mst_req_t axi_dbg_req;
+  debug_mst_rsp_t axi_dbg_rsp;
+  axi_mst_req_t axi_dbg_wide_req;
+  axi_mst_rsp_t axi_dbg_wide_rsp;
 
   always_comb begin
-    axi_in_req[AxiIn.dbg]         = axi_dbg_req;
+    axi_in_req[AxiIn.dbg]         = axi_dbg_wide_req;
     axi_in_req[AxiIn.dbg].aw.user = Cfg.AxiUserDefault;
     axi_in_req[AxiIn.dbg].w.user  = Cfg.AxiUserDefault;
     axi_in_req[AxiIn.dbg].ar.user = Cfg.AxiUserDefault;
@@ -1299,11 +1366,11 @@ module cheshire_soc import cheshire_pkg::*; #(
   axi_from_mem #(
     .MemAddrWidth ( Cfg.AddrWidth    ),
     .AxiAddrWidth ( Cfg.AddrWidth    ),
-    .DataWidth    ( Cfg.AxiDataWidth ),
+    .DataWidth    ( DebugDataWidth ),
     .MaxRequests  ( Cfg.DbgMaxReqs ),
     .AxiProt      ( '0 ),
-    .axi_req_t    ( axi_mst_req_t ),
-    .axi_rsp_t    ( axi_mst_rsp_t )
+    .axi_req_t    ( debug_mst_req_t ),
+    .axi_rsp_t    ( debug_mst_rsp_t )
   ) i_dbg_sba_axi_from_mem (
     .clk_i,
     .rst_ni,
@@ -1319,7 +1386,18 @@ module cheshire_soc import cheshire_pkg::*; #(
     .slv_aw_cache_i  ( axi_pkg::CACHE_MODIFIABLE ),
     .slv_ar_cache_i  ( axi_pkg::CACHE_MODIFIABLE ),
     .axi_req_o       ( axi_dbg_req           ),
-    .axi_rsp_i       ( axi_in_rsp[AxiIn.dbg] )
+    .axi_rsp_i       ( axi_dbg_rsp )
+  );
+
+  assign axi_dbg_wide_rsp = axi_in_rsp[AxiIn.dbg];
+  cheshire_axi_dw_bridge #(
+    .SlvDataWidth(DebugDataWidth), .MstDataWidth(Cfg.AxiDataWidth),
+    .AddrWidth(Cfg.AddrWidth), .IdWidth(Cfg.AxiMstIdWidth), .UserWidth(Cfg.AxiUserWidth),
+    .MaxReads(Cfg.DbgMaxReqs), .slv_req_t(debug_mst_req_t), .slv_rsp_t(debug_mst_rsp_t),
+    .mst_req_t(axi_mst_req_t), .mst_rsp_t(axi_mst_rsp_t)
+  ) i_debug_sba_width (
+    .clk_i, .rst_ni, .slv_req_i(axi_dbg_req), .slv_rsp_o(axi_dbg_rsp),
+    .mst_req_o(axi_dbg_wide_req), .mst_rsp_i(axi_dbg_wide_rsp)
   );
 
   // Debug Transfer Module and JTAG interface

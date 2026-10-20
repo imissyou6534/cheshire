@@ -1,0 +1,52 @@
+diff --git a/src/axi_riscv_lrsc.sv b/src/axi_riscv_lrsc.sv
+index eb75593bf5b0218fa6d55c4c0dbdcf9b202667f9..9d627bc249743a8b5d0624d722dea9034ffc9559 100644
+--- a/src/axi_riscv_lrsc.sv
++++ b/src/axi_riscv_lrsc.sv
+@@ -318,8 +318,9 @@ module axi_riscv_lrsc #(
+ 
+     res_id_t        clr_id_d,                   clr_id_q;
+ 
+-    // 3 bits AxSIZE + 8 bits AxLEN - ignored LSBs
+-    logic [10-AXI_ADDR_LSB:0] clr_len_d,        clr_len_q,
++    // Up to 256 beats of 128 bytes; include the bit representing the full count.
++    // A 64-bit bus needs to represent 256 granules, not just values up to 255.
++    logic [15-AXI_ADDR_LSB:0] clr_len_d,        clr_len_q,
+                               aw_res_len;
+ 
+     logic           aw_wait_d,                  aw_wait_q;
+@@ -1036,21 +1037,21 @@ module axi_riscv_lrsc #(
+     // Registers
+     always_ff @(posedge clk_i, negedge rst_ni) begin
+         if (~rst_ni) begin
+-            ar_state_q = AR_IDLE;
+-            aw_state_q = AW_IDLE;
+-            b_state_q  = B_NORMAL;
+-            clr_addr_q = '0;
+-            clr_len_q  = '0;
+-            clr_id_q   = '0;
+-            aw_wait_q  = '0;
++            ar_state_q <= AR_IDLE;
++            aw_state_q <= AW_IDLE;
++            b_state_q  <= B_NORMAL;
++            clr_addr_q <= '0;
++            clr_len_q  <= '0;
++            clr_id_q   <= '0;
++            aw_wait_q  <= '0;
+         end else begin
+-            ar_state_q = ar_state_d;
+-            aw_state_q = aw_state_d;
+-            b_state_q  = b_state_d;
+-            clr_addr_q = clr_addr_d;
+-            clr_len_q  = clr_len_d;
+-            clr_id_q   = clr_id_d;
+-            aw_wait_q  = aw_wait_d;
++            ar_state_q <= ar_state_d;
++            aw_state_q <= aw_state_d;
++            b_state_q  <= b_state_d;
++            clr_addr_q <= clr_addr_d;
++            clr_len_q  <= clr_len_d;
++            clr_id_q   <= clr_id_d;
++            aw_wait_q  <= aw_wait_d;
+         end
+     end
+ 

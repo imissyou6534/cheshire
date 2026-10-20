@@ -44,7 +44,7 @@ module vip_multitile #(
   end
 
   axi_sim_mem #(
-    .AddrWidth(Cfg.AddrWidth), .DataWidth(Cfg.AxiDataWidth),
+    .AddrWidth(Cfg.AddrWidth), .DataWidth($bits(ddr_req_i.w.data)),
     .IdWidth($bits(ddr_req_i.aw.id)), .UserWidth(Cfg.AxiUserWidth),
     .axi_req_t(ddr_req_t), .axi_rsp_t(ddr_rsp_t),
     .UninitializedData("zeros"), .ApplDelay(ClkPeriod/20), .AcqDelay(ClkPeriod/10)

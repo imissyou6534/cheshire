@@ -1,0 +1,506 @@
+{
+  "format_version": 1,
+  "root_commit": "5838a512d569e1034be133ffd1502dc9e6755648",
+  "hardware": {
+    "heads": {
+      "apb": "77ddf073f194d44b9119949d2421be59789e69ae",
+      "apb_uart": "6c7dde3d749ac8274377745c105da8c8b8cd27c6",
+      "ara": "4e3c586776654a035df9023015e57122f468c433",
+      "axi": "39f5f2d51c5e524f6fc5cf8b6e901f7dcc5622d7",
+      "axi_llc": "559bcbd09a5a884dbe31e2d72fd95d024e357f39",
+      "axi_riscv_atomics": "b80a8f92a6d9f16b49c3a13cbae5262525408c45",
+      "axi_rt": "3239986094107a3c71ed3568ade86e51d5c29d17",
+      "axi_stream": "54891ff40455ca94a37641b9da4604647878cc07",
+      "axi_vga": "3718b9930f94a9eaad8ee50b4bccc71df0403084",
+      "clic": "8ed76ffc779a435d0ed034f3068e4c3334fe2ecf",
+      "clint": "0d93c54b7669cd0f17f4194e2a6f093ede31a08b",
+      "common_cells": "13f28aa0021fc22c0d01a12d618fda58d2c93239",
+      "common_verification": "9c07fa860593b2caabd9b5681740c25fac04b878",
+      "cva6": "8c12cc603ac0feda3fde4c2f464f5d4a085052dd",
+      "dram_rtl_sim": "2cac4a9e12a60537567276b539ab6c919c87b5dc",
+      "fpnew": "e5aa6a01b5bbe1675c3aa8872e1203413ded83d1",
+      "fpu_div_sqrt_mvp": "86e1f558b3c95e91577c41b2fc452c86b04e85ac",
+      "idma": "122eea2cc6576fee60c6cd8e7161c967eab6e2d9",
+      "irq_router": "d1d31350b24f3965b3a51e1bc96c71eb34e94db3",
+      "obi": "5321106817e177d6c16ecc4daa922b96b1bc946b",
+      "opentitan_peripherals": "1d5ff8b7c99a58aacc128e8d3248bd1577f5e377",
+      "register_interface": "ae616e5a1ec2b41e72d200e5ab09c65e94aebd3d",
+      "riscv-dbg": "358f90110220adf7a083f8b65d157e836d706236",
+      "serial_link": "5a25f5a71074f1ebb6de7b5280f2b16924bcc666",
+      "tech_cells_generic": "7968dd6e6180df2c644636bc6d2908a49f2190cf",
+      "unbent": "e9c9d5cfb635f2d4668c816ce9235798cfecb297"
+    },
+    "rtl_sha256": "8d6f7e47fec2d65c0b1c470c9c15cf1e39745ffae538b01321ed3818cf3a1239"
+  },
+  "packages": {
+    "apb": {
+      "checkout": ".bender/git/checkouts/apb-521b279a5c028536",
+      "source": {
+        "Git": "https://github.com/pulp-platform/apb"
+      },
+      "locked_revision": "77ddf073f194d44b9119949d2421be59789e69ae",
+      "head": "77ddf073f194d44b9119949d2421be59789e69ae",
+      "tree": "c9258c79805c6515333df447f7c9c44ecaa87ab6",
+      "status": "",
+      "untracked_files": []
+    },
+    "apb_uart": {
+      "checkout": ".bender/git/checkouts/apb_uart-38dcfab592cbc1a1",
+      "source": {
+        "Git": "https://github.com/pulp-platform/apb_uart.git"
+      },
+      "locked_revision": "6c7dde3d749ac8274377745c105da8c8b8cd27c6",
+      "head": "6c7dde3d749ac8274377745c105da8c8b8cd27c6",
+      "tree": "79e05f3b5ba7f61c6be5ca83c50945ea37992700",
+      "status": "",
+      "untracked_files": []
+    },
+    "ara": {
+      "checkout": ".bender/git/checkouts/ara-2c7b103275a16c87",
+      "source": {
+        "Git": "https://github.com/pulp-platform/ara.git"
+      },
+      "locked_revision": "2895ba907e9eb14b3464609dc791a969d159a7c3",
+      "head": "4e3c586776654a035df9023015e57122f468c433",
+      "tree": "9f481987595c1619f66e5003afa0b43a58b91e28",
+      "status": "",
+      "untracked_files": [],
+      "bundle": "ara.bundle",
+      "bundle_sha256": "e5b26c049aa2aa37bf52949e069a94ff4643dcdf94d3cc16acae106538289458",
+      "patch": "ara.patch",
+      "patch_sha256": "00ecbe1f701ef9a616989aed38f54517ee8753f2091caef6d64e2d94a491ea30",
+      "local_commits": [
+        "4e3c586776654a035df9023015e57122f468c433"
+      ]
+    },
+    "axi": {
+      "checkout": ".bender/git/checkouts/axi-ecdc900686449c15",
+      "source": {
+        "Git": "https://github.com/pulp-platform/axi.git"
+      },
+      "locked_revision": "39f5f2d51c5e524f6fc5cf8b6e901f7dcc5622d7",
+      "head": "39f5f2d51c5e524f6fc5cf8b6e901f7dcc5622d7",
+      "tree": "45c79e8b377235f480905f3a294f55295bba7d71",
+      "status": "",
+      "untracked_files": []
+    },
+    "axi_llc": {
+      "checkout": ".bender/git/checkouts/axi_llc-5fb8850caad4fcfa",
+      "source": {
+        "Git": "https://github.com/pulp-platform/axi_llc.git"
+      },
+      "locked_revision": "559bcbd09a5a884dbe31e2d72fd95d024e357f39",
+      "head": "559bcbd09a5a884dbe31e2d72fd95d024e357f39",
+      "tree": "599f460df540bcbc2cb2ce02703a4f42f9da4e21",
+      "status": "?? sw/lib/axi_llc_reg32.o\n",
+      "untracked_files": [
+        {
+          "path": ".bender/git/checkouts/axi_llc-5fb8850caad4fcfa/sw/lib/axi_llc_reg32.o",
+          "size": 24824,
+          "sha256": "9074baba435d90e7343fd150155faa4217584f90ed9d1d351e8e4f4dad16029b"
+        }
+      ]
+    },
+    "axi_riscv_atomics": {
+      "checkout": ".bender/git/checkouts/axi_riscv_atomics-40ad8d2d0e0daa8b",
+      "source": {
+        "Git": "https://github.com/pulp-platform/axi_riscv_atomics.git"
+      },
+      "locked_revision": "0ac3a78fe342c5a5b9b10bff49d58897f773059e",
+      "head": "b80a8f92a6d9f16b49c3a13cbae5262525408c45",
+      "tree": "f18eec26e8342ab298d2453ca60517ee750af56a",
+      "status": "",
+      "untracked_files": [],
+      "bundle": "axi_riscv_atomics.bundle",
+      "bundle_sha256": "f1795d0d6a9766edaffb2ec770855a005992806ae2e0d83a56363f5d7aaf923d",
+      "patch": "axi_riscv_atomics.patch",
+      "patch_sha256": "9bbf6b15dbab60572ddc8d3238fda23a914aa99ab9e91a6d905687cda7a8eb50",
+      "local_commits": [
+        "b80a8f92a6d9f16b49c3a13cbae5262525408c45"
+      ]
+    },
+    "axi_rt": {
+      "checkout": ".bender/git/checkouts/axi_rt-7cef46f372eaf0fb",
+      "source": {
+        "Git": "https://github.com/pulp-platform/axi_rt.git"
+      },
+      "locked_revision": "641ea950e24722af747033f2ab85f0e48ea8d7f8",
+      "head": "3239986094107a3c71ed3568ade86e51d5c29d17",
+      "tree": "9bf129af31bf3d49d6fd1e364920116023ad478a",
+      "status": "?? .generated\n?? sw/lib/axirt.o\n",
+      "untracked_files": [
+        {
+          "path": ".bender/git/checkouts/axi_rt-7cef46f372eaf0fb/.generated",
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".bender/git/checkouts/axi_rt-7cef46f372eaf0fb/sw/lib/axirt.o",
+          "size": 20432,
+          "sha256": "f5a079c41580b3d1a5294e49083736d09018c4e1fb209534574fffe4eeaf03cb"
+        }
+      ],
+      "bundle": "axi_rt.bundle",
+      "bundle_sha256": "c407ff3a389ada05491128d72685bf380edd077f27ac8699565a9cc9eb04568c",
+      "patch": "axi_rt.patch",
+      "patch_sha256": "fb8c677b979d304e9850262528b9bd1376ed482a356c3908f58fe441e41c45de",
+      "local_commits": [
+        "3239986094107a3c71ed3568ade86e51d5c29d17"
+      ]
+    },
+    "axi_stream": {
+      "checkout": ".bender/git/checkouts/axi_stream-4bb2af42e3aea076",
+      "source": {
+        "Git": "https://github.com/pulp-platform/axi_stream.git"
+      },
+      "locked_revision": "54891ff40455ca94a37641b9da4604647878cc07",
+      "head": "54891ff40455ca94a37641b9da4604647878cc07",
+      "tree": "f501f5e3effacc5a28a46e9c0ce30a78e871287a",
+      "status": "",
+      "untracked_files": []
+    },
+    "axi_vga": {
+      "checkout": ".bender/git/checkouts/axi_vga-74c838b44ce780d5",
+      "source": {
+        "Git": "https://github.com/pulp-platform/axi_vga.git"
+      },
+      "locked_revision": "3718b9930f94a9eaad8ee50b4bccc71df0403084",
+      "head": "3718b9930f94a9eaad8ee50b4bccc71df0403084",
+      "tree": "692effd130523fe5ceed2aa95b78e2b0ca7f8764",
+      "status": "?? .generated\n",
+      "untracked_files": [
+        {
+          "path": ".bender/git/checkouts/axi_vga-74c838b44ce780d5/.generated",
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    "clic": {
+      "checkout": ".bender/git/checkouts/clic-360fff7ce2d41116",
+      "source": {
+        "Git": "https://github.com/pulp-platform/clic.git"
+      },
+      "locked_revision": "8ed76ffc779a435d0ed034f3068e4c3334fe2ecf",
+      "head": "8ed76ffc779a435d0ed034f3068e4c3334fe2ecf",
+      "tree": "ee10141e79b25029d00d40b6717255eb022bdc05",
+      "status": "",
+      "untracked_files": []
+    },
+    "clint": {
+      "checkout": ".bender/git/checkouts/clint-de4a234303f657d0",
+      "source": {
+        "Git": "https://github.com/pulp-platform/clint.git"
+      },
+      "locked_revision": "d5390a805c20f9226758a152ba1645f61da73349",
+      "head": "0d93c54b7669cd0f17f4194e2a6f093ede31a08b",
+      "tree": "497baee71ef112f831e81b07eebcaa3da6e90fac",
+      "status": "?? .generated\n",
+      "untracked_files": [
+        {
+          "path": ".bender/git/checkouts/clint-de4a234303f657d0/.generated",
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "bundle": "clint.bundle",
+      "bundle_sha256": "ce87bbdb9d43ed4e570c30b90ef805df7575024dccc84d708efdd08633752b07",
+      "patch": "clint.patch",
+      "patch_sha256": "e1edd8f64e172fa8b5672a49550e8f681acdbc4a32fbed0f72df57f894da384d",
+      "local_commits": [
+        "0d93c54b7669cd0f17f4194e2a6f093ede31a08b"
+      ]
+    },
+    "common_cells": {
+      "checkout": ".bender/git/checkouts/common_cells-7f7ae0f5e6bf7fb5",
+      "source": {
+        "Git": "https://github.com/pulp-platform/common_cells.git"
+      },
+      "locked_revision": "13f28aa0021fc22c0d01a12d618fda58d2c93239",
+      "head": "13f28aa0021fc22c0d01a12d618fda58d2c93239",
+      "tree": "32e273109134f34707066eff71a91f586e052424",
+      "status": "",
+      "untracked_files": []
+    },
+    "common_verification": {
+      "checkout": ".bender/git/checkouts/common_verification-8eae3e9fca231308",
+      "source": {
+        "Git": "https://github.com/pulp-platform/common_verification.git"
+      },
+      "locked_revision": "9c07fa860593b2caabd9b5681740c25fac04b878",
+      "head": "9c07fa860593b2caabd9b5681740c25fac04b878",
+      "tree": "fff791703e36cab77c0a10d21486c37258adf6b7",
+      "status": "",
+      "untracked_files": []
+    },
+    "cva6": {
+      "checkout": ".bender/git/checkouts/cva6-20c9d7cbe0dd6995",
+      "source": {
+        "Git": "https://github.com/pulp-platform/cva6.git"
+      },
+      "locked_revision": "99eac9a649001bdf5b8f9da52e0ca73d5c48db1c",
+      "head": "8c12cc603ac0feda3fde4c2f464f5d4a085052dd",
+      "tree": "50a493fc6c89ba04d7add13d7d7f3b6de9255574",
+      "status": "?? core/id_stage.sv.fft_src_dbg_bak\n?? core/id_stage.sv.rvv_src_dbg_bak\n?? core/scoreboard.sv.fft_src_dbg_bak\n?? core/scoreboard.sv.rvv_src_dbg_bak\n",
+      "untracked_files": [
+        {
+          "path": ".bender/git/checkouts/cva6-20c9d7cbe0dd6995/core/id_stage.sv.fft_src_dbg_bak",
+          "size": 19207,
+          "sha256": "7440e97d4b3535ac4563c9e632ac4e5a015747ff9f1c46d15bbf4298ad666122"
+        },
+        {
+          "path": ".bender/git/checkouts/cva6-20c9d7cbe0dd6995/core/id_stage.sv.rvv_src_dbg_bak",
+          "size": 19207,
+          "sha256": "7440e97d4b3535ac4563c9e632ac4e5a015747ff9f1c46d15bbf4298ad666122"
+        },
+        {
+          "path": ".bender/git/checkouts/cva6-20c9d7cbe0dd6995/core/scoreboard.sv.fft_src_dbg_bak",
+          "size": 15359,
+          "sha256": "f9386b9ffb873f2223718518766642388ecd27f11d4021524a3e794275586ea9"
+        },
+        {
+          "path": ".bender/git/checkouts/cva6-20c9d7cbe0dd6995/core/scoreboard.sv.rvv_src_dbg_bak",
+          "size": 15359,
+          "sha256": "f9386b9ffb873f2223718518766642388ecd27f11d4021524a3e794275586ea9"
+        }
+      ],
+      "bundle": "cva6.bundle",
+      "bundle_sha256": "a3557a590a213b72416fae6bdafbab435074b78d529d00178388e56d207cee0e",
+      "patch": "cva6.patch",
+      "patch_sha256": "9b648a7b61f8056abaf1904085332ed08c0ed568c709cbcb366cd0be0ac28d70",
+      "local_commits": [
+        "8c12cc603ac0feda3fde4c2f464f5d4a085052dd"
+      ]
+    },
+    "dram_rtl_sim": {
+      "checkout": ".bender/git/checkouts/dram_rtl_sim-150825794ee29da3",
+      "source": {
+        "Git": "https://github.com/pulp-platform/dram_rtl_sim.git"
+      },
+      "locked_revision": "2cac4a9e12a60537567276b539ab6c919c87b5dc",
+      "head": "2cac4a9e12a60537567276b539ab6c919c87b5dc",
+      "tree": "1e6a40981ab6fc1eea0b174fc36cdfa385f29dd0",
+      "status": "",
+      "untracked_files": []
+    },
+    "fpnew": {
+      "checkout": ".bender/git/checkouts/fpnew-ed006ec0a4178e29",
+      "source": {
+        "Git": "https://github.com/pulp-platform/cvfpu.git"
+      },
+      "locked_revision": "e5aa6a01b5bbe1675c3aa8872e1203413ded83d1",
+      "head": "e5aa6a01b5bbe1675c3aa8872e1203413ded83d1",
+      "tree": "108cd105d6d530e50b3bf9c29241e4f6b70694da",
+      "status": "",
+      "untracked_files": []
+    },
+    "fpu_div_sqrt_mvp": {
+      "checkout": ".bender/git/checkouts/fpu_div_sqrt_mvp-33e0a4fc0dc853c1",
+      "source": {
+        "Git": "https://github.com/pulp-platform/fpu_div_sqrt_mvp.git"
+      },
+      "locked_revision": "86e1f558b3c95e91577c41b2fc452c86b04e85ac",
+      "head": "86e1f558b3c95e91577c41b2fc452c86b04e85ac",
+      "tree": "c8629afd9629ef27838f933e1ea2542ab5b54382",
+      "status": "",
+      "untracked_files": []
+    },
+    "idma": {
+      "checkout": ".bender/git/checkouts/idma-77bf7fa56d324e6a",
+      "source": {
+        "Git": "https://github.com/pulp-platform/iDMA.git"
+      },
+      "locked_revision": "c12caf59bb482fe44b27361f6924ad346b2d22fe",
+      "head": "122eea2cc6576fee60c6cd8e7161c967eab6e2d9",
+      "tree": "509bce354f7fac19d67cf661083c1ed49031d87e",
+      "status": "",
+      "untracked_files": [],
+      "bundle": "idma.bundle",
+      "bundle_sha256": "97fe5287b651b4aa3ad8f33bf003dbca780de16511810587fb70ebec6649883b",
+      "patch": "idma.patch",
+      "patch_sha256": "958c51e0a81ee735f239a5f28c28e8270e1bcff9e77d12e9eff053fd2ebc951e",
+      "local_commits": [
+        "122eea2cc6576fee60c6cd8e7161c967eab6e2d9"
+      ]
+    },
+    "irq_router": {
+      "checkout": ".bender/git/checkouts/irq_router-376b3d113c15d0ef",
+      "source": {
+        "Git": "https://github.com/pulp-platform/irq_router.git"
+      },
+      "locked_revision": "d1d31350b24f3965b3a51e1bc96c71eb34e94db3",
+      "head": "d1d31350b24f3965b3a51e1bc96c71eb34e94db3",
+      "tree": "0d6735d04009184675faac00038de018c459b3cc",
+      "status": "",
+      "untracked_files": []
+    },
+    "obi": {
+      "checkout": ".bender/git/checkouts/obi-7e44f4165b1b0649",
+      "source": {
+        "Git": "https://github.com/pulp-platform/obi.git"
+      },
+      "locked_revision": "5321106817e177d6c16ecc4daa922b96b1bc946b",
+      "head": "5321106817e177d6c16ecc4daa922b96b1bc946b",
+      "tree": "74730e9142b204b27bc879f016591d88c3a0e85e",
+      "status": "",
+      "untracked_files": []
+    },
+    "opentitan_peripherals": {
+      "checkout": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a",
+      "source": {
+        "Git": "https://github.com/pulp-platform/opentitan_peripherals.git"
+      },
+      "locked_revision": "cd3153de2783abd3d03d0595e6c4b32413c62f14",
+      "head": "1d5ff8b7c99a58aacc128e8d3248bd1577f5e377",
+      "tree": "0d78467f72ec27091e240622bceae3dc89aebe4a",
+      "status": "?? .generated\n?? sw/device/lib/base/bitfield.o\n?? sw/device/lib/base/memory.o\n?? sw/device/lib/base/mmio.o\n?? sw/device/lib/dif/autogen/dif_gpio_autogen.o\n?? sw/device/lib/dif/autogen/dif_i2c_autogen.o\n?? sw/device/lib/dif/autogen/dif_rv_plic_autogen.o\n?? sw/device/lib/dif/autogen/dif_spi_host_autogen.o\n?? sw/device/lib/dif/dif_base.o\n?? sw/device/lib/dif/dif_gpio.o\n?? sw/device/lib/dif/dif_i2c.o\n?? sw/device/lib/dif/dif_rv_plic.o\n?? sw/device/lib/dif/dif_spi_host.o\n",
+      "untracked_files": [
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/.generated",
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/base/bitfield.o",
+          "size": 21528,
+          "sha256": "4d86633ff5e1377025a50b5a4905c4a41eb0978b18d65b2b0dcff20ef7000103"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/base/memory.o",
+          "size": 32264,
+          "sha256": "25d455062a2ccddde792b704ecc7cc89d2cc928cac6cd2dbd25a79aa330d6efd"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/base/mmio.o",
+          "size": 41712,
+          "sha256": "9b4691d86ee74e513ec6dbed4da3079ed1016d79ea3def5b26ca0179ea03a40e"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/autogen/dif_gpio_autogen.o",
+          "size": 42776,
+          "sha256": "1a6d54511713df6813c8a2c2410777e5bf1b90e155dc7a2e6e241b1af252604a"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/autogen/dif_i2c_autogen.o",
+          "size": 40240,
+          "sha256": "79219bc8006f7bbafda61a7ff0d63d4d47b5585221fb833fcac1e4f357abf494"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/autogen/dif_rv_plic_autogen.o",
+          "size": 15304,
+          "sha256": "cad72db54ea140399abb6dca2f9daac6e12d50a082f62b25a3ebf2ceec0ec3b5"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/autogen/dif_spi_host_autogen.o",
+          "size": 39312,
+          "sha256": "67a4726248d268f1eb11f30d247870dfe5d10af60a14a57918d3f0fa9bcc8840"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/dif_base.o",
+          "size": 14528,
+          "sha256": "815b36f9738e1284283bb13e4a56753ddde0077b4ba2b797658bfa36fafc98e4"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/dif_gpio.o",
+          "size": 39864,
+          "sha256": "71c24cd7e1c8b2dc9d2295d2c9bf6276416c01f14410971c799b47186f367ec3"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/dif_i2c.o",
+          "size": 83568,
+          "sha256": "f53c33ca3666403440f872a30e95cb46eed6fed7a64ab267d2776d9fd2f7c228"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/dif_rv_plic.o",
+          "size": 47528,
+          "sha256": "deb32ba3e992b671c7505cd573717397c212d564df6b05c82b7d20c2c8901e4a"
+        },
+        {
+          "path": ".bender/git/checkouts/opentitan_peripherals-7b624fb57f78de9a/sw/device/lib/dif/dif_spi_host.o",
+          "size": 75344,
+          "sha256": "510eaeb7d7f7f4d124c32c165a8f122e41577a086bf22055566c7347d75f9ce3"
+        }
+      ],
+      "bundle": "opentitan_peripherals.bundle",
+      "bundle_sha256": "ad626aaf06bf3601e61fcb16bbfafffd2d23e5fef8e2c9397afe8dad46713e05",
+      "patch": "opentitan_peripherals.patch",
+      "patch_sha256": "74c6d261608293d1f5e82827617ea89a3651bd464ceb93e5b60d71de27449fbf",
+      "local_commits": [
+        "1d5ff8b7c99a58aacc128e8d3248bd1577f5e377"
+      ]
+    },
+    "register_interface": {
+      "checkout": ".bender/git/checkouts/register_interface-902ad5bfde7bb98c",
+      "source": {
+        "Git": "https://github.com/pulp-platform/register_interface.git"
+      },
+      "locked_revision": "ae616e5a1ec2b41e72d200e5ab09c65e94aebd3d",
+      "head": "ae616e5a1ec2b41e72d200e5ab09c65e94aebd3d",
+      "tree": "193e10b0b0340f7118b7e2c4781e3592d6c0d5bb",
+      "status": "",
+      "untracked_files": []
+    },
+    "riscv-dbg": {
+      "checkout": ".bender/git/checkouts/riscv-dbg-1a98531d53bb4602",
+      "source": {
+        "Git": "https://github.com/pulp-platform/riscv-dbg.git"
+      },
+      "locked_revision": "358f90110220adf7a083f8b65d157e836d706236",
+      "head": "358f90110220adf7a083f8b65d157e836d706236",
+      "tree": "ff030c743e2f41d24d4b6f36de33b8473de95f2c",
+      "status": "",
+      "untracked_files": []
+    },
+    "serial_link": {
+      "checkout": ".bender/git/checkouts/serial_link-6e09ea4800bad616",
+      "source": {
+        "Git": "https://github.com/pulp-platform/serial_link.git"
+      },
+      "locked_revision": "5a25f5a71074f1ebb6de7b5280f2b16924bcc666",
+      "head": "5a25f5a71074f1ebb6de7b5280f2b16924bcc666",
+      "tree": "47c0ab1a2fc44dfb08b619ca843afb97895ffebd",
+      "status": "?? .generated\n",
+      "untracked_files": [
+        {
+          "path": ".bender/git/checkouts/serial_link-6e09ea4800bad616/.generated",
+          "size": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ]
+    },
+    "tech_cells_generic": {
+      "checkout": ".bender/git/checkouts/tech_cells_generic-223c43ccbeb688f9",
+      "source": {
+        "Git": "https://github.com/pulp-platform/tech_cells_generic.git"
+      },
+      "locked_revision": "7968dd6e6180df2c644636bc6d2908a49f2190cf",
+      "head": "7968dd6e6180df2c644636bc6d2908a49f2190cf",
+      "tree": "5df8e263daf7bc98da2ea965b971b135f6fec276",
+      "status": "",
+      "untracked_files": []
+    },
+    "unbent": {
+      "checkout": ".bender/git/checkouts/unbent-a93c32aef5b319fd",
+      "source": {
+        "Git": "https://github.com/pulp-platform/unbent.git"
+      },
+      "locked_revision": "e9c9d5cfb635f2d4668c816ce9235798cfecb297",
+      "head": "e9c9d5cfb635f2d4668c816ce9235798cfecb297",
+      "tree": "36c55d1e289bf2f418207476a67445eb9b9c184d",
+      "status": "",
+      "untracked_files": []
+    }
+  },
+  "supplemental_files": [
+    {
+      "path": ".bender/.chs_deps",
+      "size": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ],
+  "supplemental_archive": {
+    "path": "supplemental-files.tar.gz",
+    "sha256": "6518bda0a1b94c7ef5542d554a89501f8481adba9271754a1926e727d878036f"
+  },
+  "hardware_unchanged": true
+}

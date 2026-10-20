@@ -1,0 +1,443 @@
+diff --git a/src/clint.hjson b/src/clint.hjson
+index 4e327753302e1bf9988ba081db8d5a8c65ce5512..8b08d812028289841868e31708f29f9f67f8d916 100644
+--- a/src/clint.hjson
++++ b/src/clint.hjson
+@@ -15,7 +15,7 @@
+     { name: "NumCores",
+       desc: "Number of cores",
+       type: "int",
+-      default: "2",
++      default: "1",
+       local: "true"
+     }
+   ],
+@@ -51,23 +51,6 @@
+           { bits: "31:0", name: "MTIMECMP_HIGH", desc: "Machine Time Compare (High) Core 0" }
+         ]
+     },
+-    {   name: "MTIMECMP_LOW1",
+-        desc: "Machine Timer Compare",
+-        swaccess: "rw",
+-        hwaccess: "hro",
+-        fields: [
+-          { bits: "31:0", name: "MTIMECMP_LOW", desc: "Machine Time Compare (Low) Core 1" }
+-        ]
+-    },
+-    {
+-        name: "MTIMECMP_HIGH1",
+-        desc: "Machine Timer Compare",
+-        swaccess: "rw",
+-        hwaccess: "hro",
+-        fields: [
+-          { bits: "31:0", name: "MTIMECMP_HIGH", desc: "Machine Time Compare (High) Core 1" }
+-        ]
+-    },
+     { skipto: "0xBFF8" },
+     {
+         name: "MTIME_LOW",
+diff --git a/src/clint.sv b/src/clint.sv
+index b124a05c5d445642fbcca2a97a484bea6fb08852..82db519cce76fc0631f3b9decc599732a5987ab3 100644
+--- a/src/clint.sv
++++ b/src/clint.sv
+@@ -22,12 +22,12 @@ module clint import clint_reg_pkg::*; #(
+     input  reg_req_t            reg_req_i,
+     output reg_rsp_t            reg_rsp_o,
+     input  logic                rtc_i,       // Real-time clock in (usually 32.768 kHz)
+-    output logic [1:0] timer_irq_o, // Timer interrupts
+-    output logic [1:0] ipi_o        // software interrupt (a.k.a inter-process-interrupt)
++    output logic [0:0] timer_irq_o, // Timer interrupts
++    output logic [0:0] ipi_o        // software interrupt (a.k.a inter-process-interrupt)
+ );
+ 
+     logic [63:0]               mtime_q;
+-    logic [1:0][63:0] mtimecmp_q;
++    logic [0:0][63:0] mtimecmp_q;
+     // increase the timer
+     logic increase_timer;
+ 
+@@ -50,8 +50,6 @@ module clint import clint_reg_pkg::*; #(
+     assign mtime_q = {reg2hw.mtime_high.q, reg2hw.mtime_low.q};
+     assign mtimecmp_q[0] = {reg2hw.mtimecmp_high0.q, reg2hw.mtimecmp_low0.q};
+     assign ipi_o[0] = reg2hw.msip[0].p.q;
+-    assign mtimecmp_q[1] = {reg2hw.mtimecmp_high1.q, reg2hw.mtimecmp_low1.q};
+-    assign ipi_o[1] = reg2hw.msip[1].p.q;
+ 
+     assign {hw2reg.mtime_high.d, hw2reg.mtime_low.d} = mtime_q + 1;
+     assign hw2reg.mtime_low.de = increase_timer;
+@@ -67,7 +65,7 @@ module clint import clint_reg_pkg::*; #(
+     // if interrupts are enabled and the MTIE bit is set in the mie register.
+     always_comb begin : irq_gen
+         // check that the mtime cmp register is set to a meaningful value
+-        for (int unsigned i = 0; i < 2; i++) begin
++        for (int unsigned i = 0; i < 1; i++) begin
+             if (mtime_q >= mtimecmp_q[i]) begin
+                 timer_irq_o[i] = 1'b1;
+             end else begin
+diff --git a/src/clint_reg_pkg.sv b/src/clint_reg_pkg.sv
+index 3b482936b542b7595b88bdd0e650895761704c0f..2c62dead0f5e9987fd1ffaad6dddf4495578c74c 100644
+--- a/src/clint_reg_pkg.sv
++++ b/src/clint_reg_pkg.sv
+@@ -7,7 +7,7 @@
+ package clint_reg_pkg;
+ 
+   // Param list
+-  parameter int NumCores = 2;
++  parameter int NumCores = 1;
+ 
+   // Address widths within the block
+   parameter int BlockAw = 16;
+@@ -30,14 +30,6 @@ package clint_reg_pkg;
+     logic [31:0] q;
+   } clint_reg2hw_mtimecmp_high0_reg_t;
+ 
+-  typedef struct packed {
+-    logic [31:0] q;
+-  } clint_reg2hw_mtimecmp_low1_reg_t;
+-
+-  typedef struct packed {
+-    logic [31:0] q;
+-  } clint_reg2hw_mtimecmp_high1_reg_t;
+-
+   typedef struct packed {
+     logic [31:0] q;
+   } clint_reg2hw_mtime_low_reg_t;
+@@ -58,11 +50,9 @@ package clint_reg_pkg;
+ 
+   // Register -> HW type
+   typedef struct packed {
+-    clint_reg2hw_msip_mreg_t [1:0] msip; // [193:192]
+-    clint_reg2hw_mtimecmp_low0_reg_t mtimecmp_low0; // [191:160]
+-    clint_reg2hw_mtimecmp_high0_reg_t mtimecmp_high0; // [159:128]
+-    clint_reg2hw_mtimecmp_low1_reg_t mtimecmp_low1; // [127:96]
+-    clint_reg2hw_mtimecmp_high1_reg_t mtimecmp_high1; // [95:64]
++    clint_reg2hw_msip_mreg_t [0:0] msip; // [128:128]
++    clint_reg2hw_mtimecmp_low0_reg_t mtimecmp_low0; // [127:96]
++    clint_reg2hw_mtimecmp_high0_reg_t mtimecmp_high0; // [95:64]
+     clint_reg2hw_mtime_low_reg_t mtime_low; // [63:32]
+     clint_reg2hw_mtime_high_reg_t mtime_high; // [31:0]
+   } clint_reg2hw_t;
+@@ -74,37 +64,28 @@ package clint_reg_pkg;
+   } clint_hw2reg_t;
+ 
+   // Register offsets
+-  parameter logic [BlockAw-1:0] CLINT_MSIP_0_OFFSET = 16'h 0;
+-  parameter logic [BlockAw-1:0] CLINT_MSIP_1_OFFSET = 16'h 4;
++  parameter logic [BlockAw-1:0] CLINT_MSIP_OFFSET = 16'h 0;
+   parameter logic [BlockAw-1:0] CLINT_MTIMECMP_LOW0_OFFSET = 16'h 4000;
+   parameter logic [BlockAw-1:0] CLINT_MTIMECMP_HIGH0_OFFSET = 16'h 4004;
+-  parameter logic [BlockAw-1:0] CLINT_MTIMECMP_LOW1_OFFSET = 16'h 4008;
+-  parameter logic [BlockAw-1:0] CLINT_MTIMECMP_HIGH1_OFFSET = 16'h 400c;
+   parameter logic [BlockAw-1:0] CLINT_MTIME_LOW_OFFSET = 16'h bff8;
+   parameter logic [BlockAw-1:0] CLINT_MTIME_HIGH_OFFSET = 16'h bffc;
+ 
+   // Register index
+   typedef enum int {
+-    CLINT_MSIP_0,
+-    CLINT_MSIP_1,
++    CLINT_MSIP,
+     CLINT_MTIMECMP_LOW0,
+     CLINT_MTIMECMP_HIGH0,
+-    CLINT_MTIMECMP_LOW1,
+-    CLINT_MTIMECMP_HIGH1,
+     CLINT_MTIME_LOW,
+     CLINT_MTIME_HIGH
+   } clint_id_e;
+ 
+   // Register width information to check illegal writes
+-  parameter logic [3:0] CLINT_PERMIT [8] = '{
+-    4'b 1111, // index[0] CLINT_MSIP_0
+-    4'b 1111, // index[1] CLINT_MSIP_1
+-    4'b 1111, // index[2] CLINT_MTIMECMP_LOW0
+-    4'b 1111, // index[3] CLINT_MTIMECMP_HIGH0
+-    4'b 1111, // index[4] CLINT_MTIMECMP_LOW1
+-    4'b 1111, // index[5] CLINT_MTIMECMP_HIGH1
+-    4'b 1111, // index[6] CLINT_MTIME_LOW
+-    4'b 1111  // index[7] CLINT_MTIME_HIGH
++  parameter logic [3:0] CLINT_PERMIT [5] = '{
++    4'b 1111, // index[0] CLINT_MSIP
++    4'b 1111, // index[1] CLINT_MTIMECMP_LOW0
++    4'b 1111, // index[2] CLINT_MTIMECMP_HIGH0
++    4'b 1111, // index[3] CLINT_MTIME_LOW
++    4'b 1111  // index[4] CLINT_MTIME_HIGH
+   };
+ 
+ endpackage
+diff --git a/src/clint_reg_top.sv b/src/clint_reg_top.sv
+index 1161b4f9e7a3f984d1f2ced0039a6e0e9b4d1b78..d4afd0b188e13bf8fe8b33e0ce5edcdd764b694e 100644
+--- a/src/clint_reg_top.sv
++++ b/src/clint_reg_top.sv
+@@ -68,26 +68,16 @@ module clint_reg_top #(
+   // Define SW related signals
+   // Format: <reg>_<field>_{wd|we|qs}
+   //        or <reg>_{wd|we|qs} if field == 1 or 0
+-  logic msip_0_p_0_qs;
+-  logic msip_0_p_0_wd;
+-  logic msip_0_p_0_we;
+-  logic [30:0] msip_0_rsvd_0_qs;
+-  logic msip_1_p_1_qs;
+-  logic msip_1_p_1_wd;
+-  logic msip_1_p_1_we;
+-  logic [30:0] msip_1_rsvd_1_qs;
++  logic msip_p_0_qs;
++  logic msip_p_0_wd;
++  logic msip_p_0_we;
++  logic [30:0] msip_rsvd_0_qs;
+   logic [31:0] mtimecmp_low0_qs;
+   logic [31:0] mtimecmp_low0_wd;
+   logic mtimecmp_low0_we;
+   logic [31:0] mtimecmp_high0_qs;
+   logic [31:0] mtimecmp_high0_wd;
+   logic mtimecmp_high0_we;
+-  logic [31:0] mtimecmp_low1_qs;
+-  logic [31:0] mtimecmp_low1_wd;
+-  logic mtimecmp_low1_we;
+-  logic [31:0] mtimecmp_high1_qs;
+-  logic [31:0] mtimecmp_high1_wd;
+-  logic mtimecmp_high1_we;
+   logic [31:0] mtime_low_qs;
+   logic [31:0] mtime_low_wd;
+   logic mtime_low_we;
+@@ -98,20 +88,20 @@ module clint_reg_top #(
+   // Register instances
+ 
+   // Subregister 0 of Multireg msip
+-  // R[msip_0]: V(False)
++  // R[msip]: V(False)
+ 
+   // F[p_0]: 0:0
+   prim_subreg #(
+     .DW      (1),
+     .SWACCESS("RW"),
+     .RESVAL  (1'h0)
+-  ) u_msip_0_p_0 (
++  ) u_msip_p_0 (
+     .clk_i   (clk_i    ),
+     .rst_ni  (rst_ni  ),
+ 
+     // from register interface
+-    .we     (msip_0_p_0_we),
+-    .wd     (msip_0_p_0_wd),
++    .we     (msip_p_0_we),
++    .wd     (msip_p_0_wd),
+ 
+     // from internal hardware
+     .de     (1'b0),
+@@ -122,47 +112,13 @@ module clint_reg_top #(
+     .q      (reg2hw.msip[0].p.q ),
+ 
+     // to register interface (read)
+-    .qs     (msip_0_p_0_qs)
++    .qs     (msip_p_0_qs)
+   );
+ 
+ 
+   // F[rsvd_0]: 31:1
+   // constant-only read
+-  assign msip_0_rsvd_0_qs = 31'h0;
+-
+-
+-  // Subregister 1 of Multireg msip
+-  // R[msip_1]: V(False)
+-
+-  // F[p_1]: 0:0
+-  prim_subreg #(
+-    .DW      (1),
+-    .SWACCESS("RW"),
+-    .RESVAL  (1'h0)
+-  ) u_msip_1_p_1 (
+-    .clk_i   (clk_i    ),
+-    .rst_ni  (rst_ni  ),
+-
+-    // from register interface
+-    .we     (msip_1_p_1_we),
+-    .wd     (msip_1_p_1_wd),
+-
+-    // from internal hardware
+-    .de     (1'b0),
+-    .d      ('0  ),
+-
+-    // to internal hardware
+-    .qe     (),
+-    .q      (reg2hw.msip[1].p.q ),
+-
+-    // to register interface (read)
+-    .qs     (msip_1_p_1_qs)
+-  );
+-
+-
+-  // F[rsvd_1]: 31:1
+-  // constant-only read
+-  assign msip_1_rsvd_1_qs = 31'h0;
++  assign msip_rsvd_0_qs = 31'h0;
+ 
+ 
+ 
+@@ -220,60 +176,6 @@ module clint_reg_top #(
+   );
+ 
+ 
+-  // R[mtimecmp_low1]: V(False)
+-
+-  prim_subreg #(
+-    .DW      (32),
+-    .SWACCESS("RW"),
+-    .RESVAL  (32'h0)
+-  ) u_mtimecmp_low1 (
+-    .clk_i   (clk_i    ),
+-    .rst_ni  (rst_ni  ),
+-
+-    // from register interface
+-    .we     (mtimecmp_low1_we),
+-    .wd     (mtimecmp_low1_wd),
+-
+-    // from internal hardware
+-    .de     (1'b0),
+-    .d      ('0  ),
+-
+-    // to internal hardware
+-    .qe     (),
+-    .q      (reg2hw.mtimecmp_low1.q ),
+-
+-    // to register interface (read)
+-    .qs     (mtimecmp_low1_qs)
+-  );
+-
+-
+-  // R[mtimecmp_high1]: V(False)
+-
+-  prim_subreg #(
+-    .DW      (32),
+-    .SWACCESS("RW"),
+-    .RESVAL  (32'h0)
+-  ) u_mtimecmp_high1 (
+-    .clk_i   (clk_i    ),
+-    .rst_ni  (rst_ni  ),
+-
+-    // from register interface
+-    .we     (mtimecmp_high1_we),
+-    .wd     (mtimecmp_high1_wd),
+-
+-    // from internal hardware
+-    .de     (1'b0),
+-    .d      ('0  ),
+-
+-    // to internal hardware
+-    .qe     (),
+-    .q      (reg2hw.mtimecmp_high1.q ),
+-
+-    // to register interface (read)
+-    .qs     (mtimecmp_high1_qs)
+-  );
+-
+-
+   // R[mtime_low]: V(False)
+ 
+   prim_subreg #(
+@@ -330,17 +232,14 @@ module clint_reg_top #(
+ 
+ 
+ 
+-  logic [7:0] addr_hit;
++  logic [4:0] addr_hit;
+   always_comb begin
+     addr_hit = '0;
+-    addr_hit[0] = (reg_addr == CLINT_MSIP_0_OFFSET);
+-    addr_hit[1] = (reg_addr == CLINT_MSIP_1_OFFSET);
+-    addr_hit[2] = (reg_addr == CLINT_MTIMECMP_LOW0_OFFSET);
+-    addr_hit[3] = (reg_addr == CLINT_MTIMECMP_HIGH0_OFFSET);
+-    addr_hit[4] = (reg_addr == CLINT_MTIMECMP_LOW1_OFFSET);
+-    addr_hit[5] = (reg_addr == CLINT_MTIMECMP_HIGH1_OFFSET);
+-    addr_hit[6] = (reg_addr == CLINT_MTIME_LOW_OFFSET);
+-    addr_hit[7] = (reg_addr == CLINT_MTIME_HIGH_OFFSET);
++    addr_hit[0] = (reg_addr == CLINT_MSIP_OFFSET);
++    addr_hit[1] = (reg_addr == CLINT_MTIMECMP_LOW0_OFFSET);
++    addr_hit[2] = (reg_addr == CLINT_MTIMECMP_HIGH0_OFFSET);
++    addr_hit[3] = (reg_addr == CLINT_MTIME_LOW_OFFSET);
++    addr_hit[4] = (reg_addr == CLINT_MTIME_HIGH_OFFSET);
+   end
+ 
+   assign addrmiss = (reg_re || reg_we) ? ~|addr_hit : 1'b0 ;
+@@ -352,34 +251,22 @@ module clint_reg_top #(
+                (addr_hit[1] & (|(CLINT_PERMIT[1] & ~reg_be))) |
+                (addr_hit[2] & (|(CLINT_PERMIT[2] & ~reg_be))) |
+                (addr_hit[3] & (|(CLINT_PERMIT[3] & ~reg_be))) |
+-               (addr_hit[4] & (|(CLINT_PERMIT[4] & ~reg_be))) |
+-               (addr_hit[5] & (|(CLINT_PERMIT[5] & ~reg_be))) |
+-               (addr_hit[6] & (|(CLINT_PERMIT[6] & ~reg_be))) |
+-               (addr_hit[7] & (|(CLINT_PERMIT[7] & ~reg_be)))));
++               (addr_hit[4] & (|(CLINT_PERMIT[4] & ~reg_be)))));
+   end
+ 
+-  assign msip_0_p_0_we = addr_hit[0] & reg_we & !reg_error;
+-  assign msip_0_p_0_wd = reg_wdata[0];
++  assign msip_p_0_we = addr_hit[0] & reg_we & !reg_error;
++  assign msip_p_0_wd = reg_wdata[0];
+ 
+-  assign msip_1_p_1_we = addr_hit[1] & reg_we & !reg_error;
+-  assign msip_1_p_1_wd = reg_wdata[0];
+-
+-  assign mtimecmp_low0_we = addr_hit[2] & reg_we & !reg_error;
++  assign mtimecmp_low0_we = addr_hit[1] & reg_we & !reg_error;
+   assign mtimecmp_low0_wd = reg_wdata[31:0];
+ 
+-  assign mtimecmp_high0_we = addr_hit[3] & reg_we & !reg_error;
++  assign mtimecmp_high0_we = addr_hit[2] & reg_we & !reg_error;
+   assign mtimecmp_high0_wd = reg_wdata[31:0];
+ 
+-  assign mtimecmp_low1_we = addr_hit[4] & reg_we & !reg_error;
+-  assign mtimecmp_low1_wd = reg_wdata[31:0];
+-
+-  assign mtimecmp_high1_we = addr_hit[5] & reg_we & !reg_error;
+-  assign mtimecmp_high1_wd = reg_wdata[31:0];
+-
+-  assign mtime_low_we = addr_hit[6] & reg_we & !reg_error;
++  assign mtime_low_we = addr_hit[3] & reg_we & !reg_error;
+   assign mtime_low_wd = reg_wdata[31:0];
+ 
+-  assign mtime_high_we = addr_hit[7] & reg_we & !reg_error;
++  assign mtime_high_we = addr_hit[4] & reg_we & !reg_error;
+   assign mtime_high_wd = reg_wdata[31:0];
+ 
+   // Read data return
+@@ -387,36 +274,23 @@ module clint_reg_top #(
+     reg_rdata_next = '0;
+     unique case (1'b1)
+       addr_hit[0]: begin
+-        reg_rdata_next[0] = msip_0_p_0_qs;
+-        reg_rdata_next[31:1] = msip_0_rsvd_0_qs;
++        reg_rdata_next[0] = msip_p_0_qs;
++        reg_rdata_next[31:1] = msip_rsvd_0_qs;
+       end
+ 
+       addr_hit[1]: begin
+-        reg_rdata_next[0] = msip_1_p_1_qs;
+-        reg_rdata_next[31:1] = msip_1_rsvd_1_qs;
+-      end
+-
+-      addr_hit[2]: begin
+         reg_rdata_next[31:0] = mtimecmp_low0_qs;
+       end
+ 
+-      addr_hit[3]: begin
++      addr_hit[2]: begin
+         reg_rdata_next[31:0] = mtimecmp_high0_qs;
+       end
+ 
+-      addr_hit[4]: begin
+-        reg_rdata_next[31:0] = mtimecmp_low1_qs;
+-      end
+-
+-      addr_hit[5]: begin
+-        reg_rdata_next[31:0] = mtimecmp_high1_qs;
+-      end
+-
+-      addr_hit[6]: begin
++      addr_hit[3]: begin
+         reg_rdata_next[31:0] = mtime_low_qs;
+       end
+ 
+-      addr_hit[7]: begin
++      addr_hit[4]: begin
+         reg_rdata_next[31:0] = mtime_high_qs;
+       end
+ 

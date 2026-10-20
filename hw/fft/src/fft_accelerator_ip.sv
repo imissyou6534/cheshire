@@ -35,16 +35,6 @@ module fft_accelerator_ip
   localparam int unsigned QueueIdxWidth = (FftCmdQueueDepth <= 1) ? 1 : $clog2(FftCmdQueueDepth);
   localparam int unsigned QueueCntWidth = $clog2(FftCmdQueueDepth + 1);
 
-  logic                    mem_req;
-  logic [AddrWidth-1:0]    mem_addr;
-  logic                    mem_we;
-  logic [DataWidth-1:0]    mem_wdata;
-  logic [DataWidth/8-1:0]  mem_be;
-  logic                    mem_gnt;
-  logic                    mem_rsp_valid;
-  logic [DataWidth-1:0]    mem_rsp_rdata;
-  logic                    mem_rsp_error;
-
   logic                    ctrl_cmd_valid;
   logic                    ctrl_cmd_ready;
   logic                    ctrl_resp_valid;
@@ -54,8 +44,8 @@ module fft_accelerator_ip
   logic                    core_reset;
   logic                    core_ce;
   logic                    core_inverse;
-  logic [31:0]             core_sample;
-  logic [45:0]             core_result;
+  logic [31:0]             core_left, core_right;
+  logic [45:0]             core_result_left, core_result_right;
   logic                    core_sync;
 
   fft_cmd_entry_t          queue_q [FftCmdQueueDepth];
@@ -201,7 +191,9 @@ module fft_accelerator_ip
     .AddrWidth    ( AddrWidth    ),
     .DataWidth    ( DataWidth    ),
     .TransIdWidth ( TransIdWidth ),
-    .exception_t  ( exception_t  )
+    .exception_t  ( exception_t  ),
+    .axi_req_t    ( axi_req_t    ),
+    .axi_rsp_t    ( axi_rsp_t    )
   ) i_fft_task_ctrl (
     .clk_i,
     .rst_ni,
@@ -214,20 +206,15 @@ module fft_accelerator_ip
     .resp_valid_o     ( ctrl_resp_valid ),
     .resp_trans_id_o  ( ctrl_resp_trans_id ),
     .resp_exception_o ( ctrl_resp_exception ),
-    .mem_req_o        ( mem_req ),
-    .mem_addr_o       ( mem_addr ),
-    .mem_we_o         ( mem_we ),
-    .mem_wdata_o      ( mem_wdata ),
-    .mem_be_o         ( mem_be ),
-    .mem_gnt_i        ( mem_gnt ),
-    .mem_rsp_valid_i  ( mem_rsp_valid ),
-    .mem_rsp_rdata_i  ( mem_rsp_rdata ),
-    .mem_rsp_error_i  ( mem_rsp_error ),
+    .axi_req_o       ( axi_req_o ),
+    .axi_rsp_i       ( axi_rsp_i ),
     .core_reset_o     ( core_reset ),
     .core_ce_o        ( core_ce ),
     .core_inverse_o   ( core_inverse ),
-    .core_sample_o    ( core_sample ),
-    .core_result_i    ( core_result ),
+    .core_left_o      ( core_left ),
+    .core_right_o     ( core_right ),
+    .core_left_i      ( core_result_left ),
+    .core_right_i     ( core_result_right ),
     .core_sync_i      ( core_sync )
   );
 
@@ -291,39 +278,15 @@ module fft_accelerator_ip
     end
   end
 
-  axi_from_mem #(
-    .MemAddrWidth ( AddrWidth  ),
-    .AxiAddrWidth ( AddrWidth  ),
-    .DataWidth    ( DataWidth  ),
-    .MaxRequests  ( 1          ),
-    .AxiProt      ( '0         ),
-    .axi_req_t    ( axi_req_t  ),
-    .axi_rsp_t    ( axi_rsp_t  )
-  ) i_fft_axi_from_mem (
-    .clk_i,
-    .rst_ni,
-    .mem_req_i       ( mem_req ),
-    .mem_addr_i      ( mem_addr ),
-    .mem_we_i        ( mem_we ),
-    .mem_wdata_i     ( mem_wdata ),
-    .mem_be_i        ( mem_be ),
-    .mem_gnt_o       ( mem_gnt ),
-    .mem_rsp_valid_o ( mem_rsp_valid ),
-    .mem_rsp_rdata_o ( mem_rsp_rdata ),
-    .mem_rsp_error_o ( mem_rsp_error ),
-    .slv_aw_cache_i  ( axi_pkg::CACHE_MODIFIABLE ),
-    .slv_ar_cache_i  ( axi_pkg::CACHE_MODIFIABLE ),
-    .axi_req_o       ( axi_req_o ),
-    .axi_rsp_i       ( axi_rsp_i )
-  );
-
   fftifftmain i_fftifftmain (
     .i_clk     ( clk_i ),
     .i_reset   ( core_reset ),
     .i_ce      ( core_ce ),
     .i_inverse ( core_inverse ),
-    .i_sample  ( core_sample ),
-    .o_result  ( core_result ),
+    .i_left    ( core_left ),
+    .i_right   ( core_right ),
+    .o_left    ( core_result_left ),
+    .o_right   ( core_result_right ),
     .o_sync    ( core_sync )
   );
 

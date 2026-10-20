@@ -71,6 +71,7 @@ sources:
   - hw/fft/rtl/bitreverse.v
   - hw/fft/rtl/fftifftmain.v
   - hw/cheshire_pkg.sv
+  - hw/cheshire_axi_dw_bridge.sv
   - hw/shared_dma/cheshire_shared_dma_cfg_pkg.sv
   - hw/cheshire_soc.sv
   - hw/shared_dma/multi_tile_top.sv

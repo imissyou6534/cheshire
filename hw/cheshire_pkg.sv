@@ -90,6 +90,10 @@ package cheshire_pkg;
     // AXI parameters
     aw_bt   AddrWidth;
     dw_bt   AxiDataWidth;
+    dw_bt   CoreAxiDataWidth;
+    dw_bt   AraAxiDataWidth;
+    dw_bt   FftAxiDataWidth;
+    dw_bt   DbgAxiDataWidth;
     dw_bt   AxiUserWidth;
     aw_bt   AxiMstIdWidth;
     dw_bt   AxiMaxMstTrans;
@@ -501,7 +505,7 @@ package cheshire_pkg;
     config_pkg::cva6_user_cfg_t ret = cva6_config_pkg::cva6_cfg;
     // Modify what we need to
     ret.AxiAddrWidth          = cfg.AddrWidth;
-    ret.AxiDataWidth          = cfg.AxiDataWidth;
+    ret.AxiDataWidth          = cfg.CoreAxiDataWidth;
     ret.AxiIdWidth            = Cva6IdWidth;
     ret.AxiUserWidth          = cfg.AxiUserWidth;
     ret.CvxifEn               = 0;
@@ -565,6 +569,10 @@ package cheshire_pkg;
     // Interconnect
     AddrWidth         : 48,
     AxiDataWidth      : 64,
+    CoreAxiDataWidth  : 64,
+    AraAxiDataWidth   : 0,
+    FftAxiDataWidth   : 0,
+    DbgAxiDataWidth   : 64,
     AxiUserWidth      : 2,  // AMO(2)
     AxiMstIdWidth     : 2,
     AxiMaxMstTrans    : 24,

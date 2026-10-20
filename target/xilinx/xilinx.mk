@@ -68,7 +68,7 @@ CHS_NUM_TILES ?= 1
 CHS_NUM_DMAS ?= 1
 CHS_XILINX_SYNTH_ONLY ?= 0
 CHS_MULTITILE_RTL_FLAGS ?= -t rtl -t cva6 -t cv64a6_imafdcv_sv39 -t exclude_first_pass_decoder \
-    --define ARA --define NR_LANES=2 --define VLEN=2048 --define FFT_ACCEL
+    --define ARA --define NR_LANES=4 --define VLEN=2048 --define FFT_ACCEL
 CHS_MULTITILE_IPS := $(CHS_XILINX_IPS_vcu118:%=$(CHS_XILINX_DIR)/build/vcu118.%/out.xci)
 CHS_PHONY += chs-xilinx-multi-tile-vcu118
 chs-xilinx-multi-tile-vcu118: $(CHS_HW_ALL) $(CHS_MULTITILE_IPS) \

@@ -5,7 +5,8 @@
 module tb_fft_ddr #(
   parameter int unsigned NumTiles = 1,
   parameter int unsigned NumDmas = 1,
-  parameter bit RomEmbedded = 0
+  parameter bit RomEmbedded = 0,
+  parameter bit WideBus = 1
 );
   import cheshire_pkg::*;
   function automatic cheshire_cfg_t configuration();
@@ -15,14 +16,17 @@ module tb_fft_ddr #(
     cfg.AraNrLanes = 2;
     cfg.AraVLEN = 2048;
     cfg.RtcFreq = 1000000;
+    if (WideBus) return cheshire_shared_dma_cfg_pkg::wide_private_spm_tile_cfg(cfg);
     return cheshire_shared_dma_cfg_pkg::private_spm_tile_cfg(cfg);
   endfunction
   localparam cheshire_cfg_t Cfg = configuration();
   localparam int BeatBytes = Cfg.AxiDataWidth/8;
   localparam int BeatSize = $clog2(BeatBytes);
+  localparam int SharedDataWidth = WideBus ? 256 : Cfg.AxiDataWidth;
   `CHESHIRE_TYPEDEF_ALL(tile_, Cfg)
   typedef logic [$bits(tile_axi_llc_id_t)+$clog2(NumTiles+NumDmas)-1:0] ddr_id_t;
-  `CHESHIRE_TYPEDEF_AXI_CT(ddr, tile_addr_t, ddr_id_t, tile_axi_data_t, tile_axi_strb_t, tile_axi_user_t)
+  `CHESHIRE_TYPEDEF_AXI_CT(ddr, tile_addr_t, ddr_id_t,
+    logic [SharedDataWidth-1:0], logic [SharedDataWidth/8-1:0], tile_axi_user_t)
   wire clk, rst_n, rtc;
   logic [NumTiles-1:0] uart_tx, irq;
   tile_axi_mst_req_t [NumTiles-1:0] loader_req;
@@ -54,9 +58,12 @@ module tb_fft_ddr #(
   string fft_ddr_dir;
   int fft_inverse = 0;
   longint unsigned fft_write_responses [NumTiles];
+  longint unsigned fft_write_bytes [NumTiles], fft_write_bursts [NumTiles];
+  longint unsigned fft_long_reads [NumTiles], fft_long_writes [NumTiles];
 
   multi_tile_top #(
     .NumTiles(NumTiles), .NumDmas(NumDmas), .Cfg(Cfg),
+    .DmaAxiDataWidth(Cfg.AxiDataWidth), .SharedAxiDataWidth(SharedDataWidth),
     .ddr_req_t(ddr_req_t), .ddr_rsp_t(ddr_rsp_t),
     .ext_mst_req_t(tile_axi_mst_req_t), .ext_mst_rsp_t(tile_axi_mst_rsp_t)
   ) dut (
@@ -122,7 +129,9 @@ module tb_fft_ddr #(
     tile_axi_data_t data;
     longint unsigned address;
     for (int t=0; t<NumTiles; t++) begin
-      if (fft_requests[t] != 2*FftJobs || fft_write_responses[t] != FftJobs*FftPoints)
+      if (fft_requests[t] != 2*FftJobs || fft_write_bytes[t] != FftJobs*FftPoints*8 ||
+          fft_write_responses[t] == 0 || fft_write_responses[t] != fft_write_bursts[t] ||
+          fft_long_reads[t] == 0 || fft_long_writes[t] == 0)
         fail($sformatf("FFT transaction count tile=%0d commands=%0d writes=%0d",t,fft_requests[t],fft_write_responses[t]));
       for (int job=0; job<FftJobs; job++) begin
         fd = $fopen($sformatf("%s/tile%0d.job%0d.csv",fft_ddr_dir,t,job),"w");
@@ -130,13 +139,17 @@ module tb_fft_ddr #(
         $fdisplay(fd,"index,address,word");
         for (int sample=0; sample<FftPoints; sample++) begin
           address = DdrBase+t*TileStride+job*JobStride+OutputOffset+8*sample;
-          vip.axi_read(t,address,BeatSize,data);
-          if ($isunknown(data)) fail($sformatf("unknown DDR output tile=%0d job=%0d sample=%0d",t,job,sample));
-          $fdisplay(fd,"%0d,0x%016h,0x%016h",sample,address,data);
+          vip.axi_read(t,address,3,data);
+          if ($isunknown(64'(data >> (8*(address%BeatBytes)))))
+            fail($sformatf("unknown DDR output tile=%0d job=%0d sample=%0d",t,job,sample));
+          $fdisplay(fd,"%0d,0x%016h,0x%016h",sample,address,
+            64'(data >> (8*(address%BeatBytes))));
         end
         $fclose(fd);
       end
-      $display("FFT DDR readback tile=%0d commands=%0d writes=%0d",t,fft_requests[t],fft_write_responses[t]);
+      $display("FFT DDR readback tile=%0d commands=%0d writes=%0d bytes=%0d read_bursts=%0d write_bursts=%0d",
+        t,fft_requests[t],fft_write_responses[t],fft_write_bytes[t],
+        fft_long_reads[t],fft_long_writes[t]);
     end
   endtask
 
@@ -152,6 +165,8 @@ module tb_fft_ddr #(
         rom_retired[t] = 0; spm_retired[t] = 0;
         ara_requests[t] = 0; fft_requests[t] = 0;
         fft_write_responses[t] = 0;
+        fft_write_bytes[t] = 0; fft_write_bursts[t] = 0;
+        fft_long_reads[t] = 0; fft_long_writes[t] = 0;
         last_pc[t] = 0; trap_cause[t] = 0;
       end else begin
         if ($isunknown(raw[t])) fail($sformatf("unknown completion tile=%0d",t));
@@ -169,6 +184,19 @@ module tb_fft_ddr #(
             dut.gen_tiles[t].i_soc.acc_resp_fft.acc_resp.req_ready) fft_requests[t]++;
         if (dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_req.b_ready &&
             dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_rsp.b_valid) fft_write_responses[t]++;
+        if (dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_req.aw_valid &&
+            dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_rsp.aw_ready) begin
+          fft_write_bursts[t]++;
+          if (dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_req.aw.len != 0)
+            fft_long_writes[t]++;
+        end
+        if (dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_req.ar_valid &&
+            dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_rsp.ar_ready &&
+            dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_req.ar.len != 0)
+          fft_long_reads[t]++;
+        if (dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_req.w_valid &&
+            dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_rsp.w_ready)
+          fft_write_bytes[t] += $countones(dut.gen_tiles[t].i_soc.gen_cva6_cores[0].axi_fft_req.w.strb);
         for (int c=0; c<$bits(dut.gen_tiles[t].i_soc.gen_cva6_cores[0].i_core_cva6.commit_ack); c++)
           if (dut.gen_tiles[t].i_soc.gen_cva6_cores[0].i_core_cva6.commit_ack[c] &&
               !dut.gen_tiles[t].i_soc.gen_cva6_cores[0].i_core_cva6.commit_instr_id_commit[c].ex.valid) begin
@@ -192,7 +220,8 @@ module tb_fft_ddr #(
     tile_axi_data_t data;
     assert(NumTiles > 0 && NumTiles <= 64 && NumDmas > 0 && NumDmas <= 65536)
       else $fatal(1,"invalid tile/DMA counts");
-    assert(!RomEmbedded && Cfg.AxiDataWidth == 64) else $fatal(1,"FFT DDR TB requires SPM boot and 64-bit AXI");
+    assert(!RomEmbedded && Cfg.AxiDataWidth inside {64,128})
+      else $fatal(1,"FFT DDR TB requires SPM boot and a supported AXI width");
     if (!$value$plusargs("FFT_DDR_DIR=%s",fft_ddr_dir)) $fatal(1,"FFT_DDR_DIR required");
     void'($value$plusargs("FFT_INVERSE=%d",fft_inverse));
     if (!(fft_inverse inside {0,1})) $fatal(1,"invalid FFT direction");

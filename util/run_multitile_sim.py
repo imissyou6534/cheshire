@@ -88,6 +88,13 @@ def run(args):
     baseline = hardware_state()
     report = dict(status='failed', boot=args.boot, tiles=args.tiles, dmas=args.dmas,
                   expected_return=args.expected_return, hardware=baseline)
+    report['bus_profile'] = args.bus_profile
+    report['widths'] = dict(cpu=64, debug=64, tile=128 if args.bus_profile == 'wide' else 64,
+                          ara=128 if args.bus_profile == 'wide' else 64,
+                          fft=128 if args.bus_profile == 'wide' else 64,
+                          dma=128 if args.bus_profile == 'wide' else 64,
+                          shared=256 if args.bus_profile == 'wide' else 64,
+                          ara_lanes=4 if args.bus_profile == 'wide' else 2, vlen=2048)
     result_csv = out / 'result.csv'
     result_csv.unlink(missing_ok=True)
     try:
@@ -115,6 +122,7 @@ def run(args):
             tb_target = 'fft_ddr_test' if args.testbench == 'fft-ddr' else 'multitile_system_test'
             tb_files = [ROOT / 'target/sim/src/vip_multitile.sv', ROOT / ('target/sim/src/' + tb_name + '.sv')]
             compile_config = dict(boot=args.boot, tiles=args.tiles, dmas=args.dmas, hardware=baseline, top=tb_name,
+                                  bus_profile=args.bus_profile, widths=report['widths'],
                                   testbench={str(path): sha(path.read_bytes()) for path in tb_files},
                                   scripts={str(path): sha(path.read_bytes()) for path in
                                            [Path(__file__), ROOT / 'util/rom_bender.py']},
@@ -151,6 +159,7 @@ def run(args):
                          '-pvalue+' + tb_name + '.NumTiles=' + str(args.tiles),
                          '-pvalue+' + tb_name + '.NumDmas=' + str(args.dmas),
                          '-pvalue+' + tb_name + '.RomEmbedded=' + str(int(args.boot == 'rom')),
+                         '-pvalue+' + tb_name + '.WideBus=' + str(int(args.bus_profile == 'wide')),
                          '-o', str(simv)], cwd=out)
                 cached.write_text(json.dumps(dict(signature=signature, config=compile_config), indent=2) + '\n')
             if args.build_only:
@@ -168,7 +177,7 @@ def run(args):
             uart_expected = args.uart_expected.resolve() if args.uart_expected else None
             if is_hello and uart_expected is None:
                 uart_expected = out / 'uart_expected.bin'
-                uart_expected.write_bytes(b'Hello Vector World!\r\n')
+                uart_expected.write_bytes(b'ni hao a, 1017!\r\nHello Vector World!\r\n')
             if uart_expected:
                 argv += ['+UART_EXPECTED=' + str(uart_expected)]
             check = args.check_buffer
@@ -230,6 +239,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--boot', choices=['rom', 'spm'], default='rom')
     parser.add_argument('--testbench', choices=['multitile', 'fft-ddr'], default='multitile')
+    parser.add_argument('--bus-profile', choices=['wide', 'legacy'], default='wide')
     parser.add_argument('--sim-arg', action='append', default=[], help='extra simulator plusarg for a specialized testbench')
     parser.add_argument('--tiles', type=int, default=1)
     parser.add_argument('--dmas', type=int, default=1)

@@ -1,0 +1,102 @@
+diff --git a/core/acc_dispatcher.sv b/core/acc_dispatcher.sv
+index aa526951e6eb7bfbd2bc6db9cd6a711272099f6b..2a7e6238587a444450db20abd30ef580403f5766 100644
+--- a/core/acc_dispatcher.sv
++++ b/core/acc_dispatcher.sv
+@@ -97,6 +97,14 @@ module acc_dispatcher
+   logic acc_ready;
+   logic acc_valid_d, acc_valid_q;
+ 
++  function automatic logic is_fft_accel_insn(input logic [31:0] insn);
++    return (insn[6:0] == riscv::OpcodeCustom0 &&
++            insn[14:12] == 3'b101 &&
++            insn[30:25] == 6'd12 &&
++            insn[11:7] == 5'd0) ||
++           insn == 32'h0000_002b;
++  endfunction
++
+   /**************************
+    *  Accelerator issue     *
+    **************************/
+@@ -209,6 +217,9 @@ module acc_dispatcher
+   accelerator_req_t acc_req;
+   logic             acc_req_valid;
+   logic             acc_req_ready;
++  logic             acc_dispatch_blocked;
++
++  assign acc_dispatch_blocked = flush_ex_i || flush_unissued_instr_i || commit_st_barrier_i;
+ 
+   accelerator_req_t acc_req_int;
+   spill_register #(
+@@ -265,9 +276,16 @@ module acc_dispatcher
+           trans_id: acc_insn_queue_o.trans_id,
+           default: '0
+       };
+-      // Wait until the instruction is no longer speculative.
+-      acc_req_valid      = insn_ready_q[acc_insn_queue_o.trans_id] ||
+-                           (acc_commit && insn_pending_q[acc_commit_trans_id] && !flush_unissued_instr_i);
++      // Wait until the instruction is no longer speculative.  Accelerator
++      // requests have side effects in the attached accelerator, so only the
++      // oldest commit-port entry may escape.  A port-1 ACCEL behind an older
++      // fence/CSR/flush-producing instruction would otherwise be observed by
++      // the accelerator and then replayed after the pipeline flush.
++      acc_req_valid      = !acc_dispatch_blocked &&
++                           (insn_ready_q[acc_insn_queue_o.trans_id] ||
++                            (acc_commit &&
++                             (acc_commit_trans_id == acc_insn_queue_o.trans_id) &&
++                             insn_pending_q[acc_commit_trans_id]));
+       acc_insn_queue_pop = acc_req_valid && acc_req_ready;
+     end
+   end
+@@ -311,20 +329,18 @@ module acc_dispatcher
+   always_comb begin : accelerator_commit
+     acc_commit = 1'b0;
+     if (!commit_instr_i[0].valid && commit_instr_i[0].fu == ACCEL) acc_commit = 1'b1;
+-    if (commit_instr_i[0].valid && !commit_instr_i[1].valid && commit_instr_i[1].fu == ACCEL)
+-      acc_commit = 1'b1;
+   end
+ 
+   // Dirty the V state if we are committing anything related to the vector accelerator
+   always_comb begin : dirty_v_state
+     dirty_v_state_o = 1'b0;
+     for (int i = 0; i < CVA6Cfg.NrCommitPorts; i++) begin
+-      dirty_v_state_o |= commit_ack_i[i] & (commit_instr_i[i].fu == ACCEL);
++      dirty_v_state_o |= commit_ack_i[i] & (commit_instr_i[i].fu == ACCEL) &
++                         !is_fft_accel_insn(commit_instr_i[i].result[31:0]);
+     end
+   end
+ 
+-  assign acc_commit_trans_id = !commit_instr_i[0].valid ? commit_instr_i[0].trans_id
+-                                                        : commit_instr_i[1].trans_id;
++  assign acc_commit_trans_id = commit_instr_i[0].trans_id;
+ 
+   /**************************
+    *  Accelerator barriers  *
+diff --git a/core/controller.sv b/core/controller.sv
+index 56cad0c19f43f7bccabc9c629dc86865832f4b6f..01a424db2f5fe733bcc2e608c5acefa428ce56ae 100644
+--- a/core/controller.sv
++++ b/core/controller.sv
+@@ -434,4 +434,5 @@ module controller
+       cache_init_q    <= cache_init_d;
+     end
+   end
++
+ endmodule
+diff --git a/core/decoder.sv b/core/decoder.sv
+index 1d340ecafded64f7e5311cb6c36874a2cddac2e1..d4bc3b8485b6b96bc19f49034bc3324bac7feb03 100644
+--- a/core/decoder.sv
++++ b/core/decoder.sv
+@@ -1580,6 +1580,14 @@ module decoder
+         instruction_o.use_imm = acc_instruction.use_imm;
+       end
+     end
++`ifndef SYNTHESIS
++    if (instruction_i[6:0] == riscv::OpcodeCustom0 && instruction_i[14:12] == 3'b101) begin
++      $display("[cva6_decoder] insn=%08x enable_acc=%0d is_accel=%0d acc_illegal=%0d fu=%0d op=%0d rs1=%0d rs2=%0d rd=%0d use_imm=%0d result=%h",
++               instruction_i, CVA6Cfg.EnableAccelerator, is_accel, acc_illegal_instr,
++               instruction_o.fu, instruction_o.op, instruction_o.rs1, instruction_o.rs2,
++               instruction_o.rd, instruction_o.use_imm, instruction_o.result);
++    end
++`endif
+   end
+ 
+   // ---------------------

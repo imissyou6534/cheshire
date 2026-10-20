@@ -2,6 +2,8 @@
 module multi_tile_top #(
   parameter int unsigned NumTiles = 4,
   parameter int unsigned NumDmas = 2,
+  parameter int unsigned DmaAxiDataWidth = 0,
+  parameter int unsigned SharedAxiDataWidth = 0,
   parameter cheshire_pkg::cheshire_cfg_t Cfg =
     cheshire_shared_dma_cfg_pkg::tile_cfg(cheshire_pkg::DefaultCfg),
   parameter int unsigned CompletionDepth = 4,
@@ -79,6 +81,7 @@ module multi_tile_top #(
   cheshire_shared_dma_subsystem #(
     .NumTiles(NumTiles), .NumDmas(NumDmas), .AxiAddrWidth(Cfg.AddrWidth),
     .AxiDataWidth(Cfg.AxiDataWidth), .AxiIdWidth($bits(tile_axi_llc_id_t)),
+    .DmaAxiDataWidth(DmaAxiDataWidth), .SharedAxiDataWidth(SharedAxiDataWidth),
     .AxiSlvIdWidth($bits(tile_axi_slv_id_t)), .AxiUserWidth(Cfg.AxiUserWidth),
     .AxiUserAmoMsb(Cfg.AxiUserAmoMsb), .AxiUserAmoLsb(Cfg.AxiUserAmoLsb),
     .AxiLocalSourceWidth($bits(tile_axi_slv_id_t)-Cfg.AxiMstIdWidth),

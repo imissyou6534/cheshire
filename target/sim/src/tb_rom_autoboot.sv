@@ -10,7 +10,7 @@ module tb_rom_autoboot #(
   function automatic cheshire_cfg_t test_cfg();
     cheshire_cfg_t cfg = DefaultCfg;
     cfg.Ara=1; cfg.Fft=1; cfg.AraNrLanes=2; cfg.AraVLEN=2048; cfg.RtcFreq=1000000;
-    return cheshire_shared_dma_cfg_pkg::private_spm_tile_cfg(cfg);
+    return cheshire_shared_dma_cfg_pkg::wide_private_spm_tile_cfg(cfg);
   endfunction
   localparam cheshire_cfg_t Cfg = test_cfg();
   `CHESHIRE_TYPEDEF_ALL(tile_, Cfg)
@@ -47,7 +47,8 @@ module tb_rom_autoboot #(
   int unsigned ara_requests [NumTiles], ara_reads [NumTiles], ara_writes [NumTiles];
   int unsigned ddr_reads = 0, ddr_writes = 0;
   string received = "";
-  string expected = {"Hello Vector World!",8'h0d,8'h0a};
+  string expected = {"ni hao a, 1017!",8'h0d,8'h0a,"Hello Vector World!",8'h0d,8'h0a};
+  string expected_buffer = {"Hello Vector World!",8'h0d,8'h0a};
   bit uart_done = 0;
 
   initial begin : uart_monitor
@@ -65,7 +66,7 @@ module tb_rom_autoboot #(
       #8680ns;
       assert(uart_tx === 1 && !uart_done) else $fatal(1,"ROM UART frame/extra byte");
       received = {received,data};
-      if (data == 8'h0a) begin
+      if (received.len() == expected.len()) begin
         $write("ROM UART actual: %s",received);
         assert(received == expected) else $fatal(1,"ROM UART mismatch");
         uart_done = 1;
@@ -159,7 +160,7 @@ module tb_rom_autoboot #(
       for (int b=0;b<64;b+=4) begin
         vip.jtag_read_reg32(buffer+b,value);
         for (int lane=0;lane<4;lane++)
-          assert(value[lane*8+:8] === (b+lane < expected.len() ? 8'(expected[b+lane]) : 8'h00))
+          assert(value[lane*8+:8] === (b+lane < expected_buffer.len() ? 8'(expected_buffer[b+lane]) : 8'h00))
             else $fatal(1,"autoboot buffer mismatch byte=%0d",b+lane);
       end
     end

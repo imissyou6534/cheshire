@@ -1,6 +1,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 //
-// Filename:	/home/user06/work/dblclockfft/fft-core/fftifft-4096/fftifftsize.h
+// Filename:	/tmp/cheshire-dual-runtime-20261019/fftifftsize.h
 // {{{
 // Project:	A General Purpose Pipelined FFT Implementation
 //
@@ -54,7 +54,7 @@
 
 // #define ASYNC_RESETN
 #define	FFT_CKPCE	1	// Clocks per CE
-// #define	DBLCLKFFT // this FFT takes one input sample per clock
+#define	DBLCLKFFT
 
 // Parameters for testing the longbimpy
 #define	TST_LONGBIMPY_AW	8

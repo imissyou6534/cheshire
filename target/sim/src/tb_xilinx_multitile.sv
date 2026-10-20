@@ -9,7 +9,7 @@ module tb_xilinx_multitile #(
   function automatic cheshire_cfg_t test_cfg();
     cheshire_cfg_t cfg = DefaultCfg;
     cfg.Ara=1; cfg.Fft=1; cfg.AraNrLanes=2; cfg.AraVLEN=2048; cfg.RtcFreq=1000000;
-    return cheshire_shared_dma_cfg_pkg::private_spm_tile_cfg(cfg);
+    return cheshire_shared_dma_cfg_pkg::wide_private_spm_tile_cfg(cfg);
   endfunction
   localparam cheshire_cfg_t Cfg = test_cfg();
   `CHESHIRE_TYPEDEF_ALL(tile_, Cfg)
@@ -40,10 +40,12 @@ module tb_xilinx_multitile #(
   );
 
   string received = "";
-  string expected = {"Hello Vector World!",8'h0d,8'h0a};
+  string expected = {"ni hao a, 1017!",8'h0d,8'h0a,"Hello Vector World!",8'h0d,8'h0a};
+  string expected_buffer = {"Hello Vector World!",8'h0d,8'h0a};
   bit uart_done = 0;
   int unsigned ara_requests = 0, ara_reads = 0, ara_writes = 0, spm_retired = 0;
   int unsigned dma_submits = 0, dma_pops = 0, ddr_reads = 0, ddr_writes = 0;
+  int unsigned sba_reads = 0, sba_writes = 0;
   bit app_started = 0;
   initial begin : uart_monitor
     byte unsigned data;
@@ -60,7 +62,7 @@ module tb_xilinx_multitile #(
       #8680ns;
       assert(uart_tx === 1 && !uart_done) else $fatal(1,"FPGA UART frame/extra byte");
       received = {received,data};
-      if (data == 8'h0a) begin
+      if (received.len() == expected.len()) begin
         $write("FPGA UART actual: %s",received);
         assert(received == expected) else $fatal(1,"FPGA UART string mismatch");
         uart_done = 1;
@@ -70,6 +72,10 @@ module tb_xilinx_multitile #(
 
   always @(posedge dut.soc_clk) if (dut.rst_n) begin
     assert(dut.clocks_locked) else $fatal(1,"FPGA core released before clock lock");
+    if (dut.i_multi_tile.gen_tiles[0].i_soc.axi_dbg_req.ar_valid &&
+        dut.i_multi_tile.gen_tiles[0].i_soc.axi_dbg_rsp.ar_ready) sba_reads++;
+    if (dut.i_multi_tile.gen_tiles[0].i_soc.axi_dbg_req.aw_valid &&
+        dut.i_multi_tile.gen_tiles[0].i_soc.axi_dbg_rsp.aw_ready) sba_writes++;
     if (app_started) begin
       if (dut.i_multi_tile.gen_tiles[0].i_soc.acc_req_ara.acc_req.req_valid &&
           dut.i_multi_tile.gen_tiles[0].i_soc.acc_resp_ara.acc_resp.req_ready) ara_requests++;
@@ -115,6 +121,13 @@ module tb_xilinx_multitile #(
     assert($bits(dut.i_dram_wrapper.cdc_dram_req.w.data) == 512 &&
       $bits(dut.i_dram_wrapper.cdc_dram_req.aw.id) == 8)
       else $fatal(1,"MIG width/ID conversion missing");
+    assert(Cfg.AraNrLanes == 4 && Cfg.AxiDataWidth == 128 &&
+      $bits(dut.i_multi_tile.gen_tiles[0].i_soc.axi_dbg_req.w.data) == 64 &&
+      $bits(dut.i_multi_tile.gen_tiles[0].i_soc.axi_dbg_wide_req.w.data) == 128 &&
+      $bits(dut.i_multi_tile.i_dma_subsystem.dma_req[0].w.data) == 128 &&
+      $bits(dut.i_multi_tile.i_dma_subsystem.masters_req[0].w.data) == 256 &&
+      $bits(dut.ddr_req.w.data) == 256)
+      else $fatal(1,"FPGA wide bus profile mismatch");
     if ($test$plusargs("LINKS_ONLY")) begin
       logic read_data [32*NumTiles], write_data [32*NumTiles];
       write_data = '{default:1'b0};
@@ -140,6 +153,8 @@ module tb_xilinx_multitile #(
     vip.wait_for_reset();
     wait(dut.rst_n);
     vip.jtag_init();
+    read32(64'h02000000,value);
+    assert(value != 0) else $fatal(1,"FPGA JTAG ROM read failed");
     vip.jtag_poll_bit0(64'h03001000,value,20);
     vip.jtag_dbg.wait_idle(10000);
     vip.uart_write_byte(8'h06);
@@ -158,7 +173,7 @@ module tb_xilinx_multitile #(
     for (int b=0;b<64;b+=4) begin
       read32(buffer+b,value);
       for (int lane=0;lane<4;lane++)
-        assert(value[lane*8+:8] === (b+lane < expected.len() ? 8'(expected[b+lane]) : 8'h00))
+        assert(value[lane*8+:8] === (b+lane < expected_buffer.len() ? 8'(expected_buffer[b+lane]) : 8'h00))
           else $fatal(1,"FPGA hello buffer mismatch byte=%0d",b+lane);
     end
     for (int w=0;w<16;w++) begin
@@ -185,10 +200,12 @@ module tb_xilinx_multitile #(
       assert(value == 32'hcafe0000+32'(w)) else $fatal(1,"FPGA DMA data mismatch word=%0d",w);
     end
     write32(64'h01000114,1);
-    assert(!dut.dma_irq[0] && dma_submits == 1 && dma_pops == 1 && ddr_reads > 0 && ddr_writes > 0)
+    assert(!dut.dma_irq[0] && dma_submits == 1 && dma_pops == 1 && ddr_reads > 0 && ddr_writes > 0 &&
+      sba_reads > 0 && sba_writes > 0)
       else $fatal(1,"FPGA DMA accounting or IRQ clear failed");
     $display("FPGA evidence Ara req/read/write=%0d/%0d/%0d SPM retirements=%0d DDR R/W=%0d/%0d DMA=%0d/%0d",
       ara_requests,ara_reads,ara_writes,spm_retired,ddr_reads,ddr_writes,dma_submits,dma_pops);
+    $display("FPGA evidence JTAG SBA R/W=%0d/%0d widths Debug64 Tile128 DMA128 Shared256 MIG512 Ara4",sba_reads,sba_writes);
     $display("PASS Xilinx multi-tile board smoke %0d tile x %0d DMA",NumTiles,NumDmas);
     $finish;
   end

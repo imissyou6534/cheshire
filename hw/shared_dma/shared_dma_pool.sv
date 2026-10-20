@@ -4,6 +4,7 @@ module shared_dma_pool import cheshire_dma_pkg::*; #(
   parameter int unsigned NumDmas = 2,
   parameter int unsigned AxiAddrWidth = 32,
   parameter int unsigned AxiDataWidth = 64,
+  parameter int unsigned CtrlAxiDataWidth = AxiDataWidth,
   parameter int unsigned AxiIdWidth = 4,
   parameter int unsigned AxiSlvIdWidth = 4,
   parameter int unsigned AxiUserWidth = 1,
@@ -47,7 +48,7 @@ module shared_dma_pool import cheshire_dma_pkg::*; #(
   logic [NumTiles-1:0] tile_comp_valid, tile_comp_ready;
   for (genvar t=0;t<NumTiles;t++) begin : gen_tiles
     dma_tile_frontend #(
-      .AxiAddrWidth(AxiAddrWidth), .AxiDataWidth(AxiDataWidth),
+      .AxiAddrWidth(AxiAddrWidth), .AxiDataWidth(CtrlAxiDataWidth),
       .AxiSlvIdWidth(AxiSlvIdWidth), .AxiUserWidth(AxiUserWidth),
       .CompletionDepth(CompletionDepth), .MemStart(MemStart), .MemEnd(MemEnd),
       .axi_req_t(tile_ctrl_req_t), .axi_rsp_t(tile_ctrl_rsp_t), .job_t(job_t)

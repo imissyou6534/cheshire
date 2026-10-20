@@ -39,4 +39,21 @@ package cheshire_shared_dma_cfg_pkg;
     cfg.AxiExtNumMst=1;
     return cfg;
   endfunction
+
+  function automatic cheshire_pkg::cheshire_cfg_t wide_private_spm_tile_cfg(
+      input cheshire_pkg::cheshire_cfg_t base);
+    cheshire_pkg::cheshire_cfg_t cfg;
+    cfg=private_spm_tile_cfg(base);
+    cfg.AxiDataWidth=128;
+    cfg.CoreAxiDataWidth=64;
+    cfg.AraAxiDataWidth=128;
+    cfg.FftAxiDataWidth=128;
+    cfg.DbgAxiDataWidth=64;
+    cfg.AraNrLanes=4;
+    cfg.AraVLEN=2048;
+    cfg.LlcSetAssoc=8;
+    cfg.LlcNumLines=256;
+    cfg.LlcNumBlocks=4;
+    return cfg;
+  endfunction
 endpackage

@@ -4,7 +4,8 @@
 module tb_multitile #(
   parameter int unsigned NumTiles = 1,
   parameter int unsigned NumDmas = 1,
-  parameter bit RomEmbedded = 1
+  parameter bit RomEmbedded = 1,
+  parameter bit WideBus = 1
 );
   import cheshire_pkg::*;
   function automatic cheshire_cfg_t configuration();
@@ -14,14 +15,17 @@ module tb_multitile #(
     cfg.AraNrLanes = 2;
     cfg.AraVLEN = 2048;
     cfg.RtcFreq = 1000000;
+    if (WideBus) return cheshire_shared_dma_cfg_pkg::wide_private_spm_tile_cfg(cfg);
     return cheshire_shared_dma_cfg_pkg::private_spm_tile_cfg(cfg);
   endfunction
   localparam cheshire_cfg_t Cfg = configuration();
   localparam int BeatBytes = Cfg.AxiDataWidth/8;
   localparam int BeatSize = $clog2(BeatBytes);
+  localparam int SharedDataWidth = WideBus ? 256 : Cfg.AxiDataWidth;
   `CHESHIRE_TYPEDEF_ALL(tile_, Cfg)
   typedef logic [$bits(tile_axi_llc_id_t)+$clog2(NumTiles+NumDmas)-1:0] ddr_id_t;
-  `CHESHIRE_TYPEDEF_AXI_CT(ddr, tile_addr_t, ddr_id_t, tile_axi_data_t, tile_axi_strb_t, tile_axi_user_t)
+  `CHESHIRE_TYPEDEF_AXI_CT(ddr, tile_addr_t, ddr_id_t,
+    logic [SharedDataWidth-1:0], logic [SharedDataWidth/8-1:0], tile_axi_user_t)
   wire clk, rst_n, rtc;
   logic [NumTiles-1:0] uart_tx, irq;
   tile_axi_mst_req_t [NumTiles-1:0] loader_req;
@@ -47,6 +51,7 @@ module tb_multitile #(
 
   multi_tile_top #(
     .NumTiles(NumTiles), .NumDmas(NumDmas), .Cfg(Cfg),
+    .DmaAxiDataWidth(Cfg.AxiDataWidth), .SharedAxiDataWidth(SharedDataWidth),
     .ddr_req_t(ddr_req_t), .ddr_rsp_t(ddr_rsp_t),
     .ext_mst_req_t(tile_axi_mst_req_t), .ext_mst_rsp_t(tile_axi_mst_rsp_t)
   ) dut (

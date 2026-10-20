@@ -28,14 +28,14 @@ module multi_tile_top_xilinx import cheshire_pkg::*; #(
 `ifdef FFT_ACCEL
     cfg.Fft = 1;
 `endif
-    return cheshire_shared_dma_cfg_pkg::private_spm_tile_cfg(cfg);
+    return cheshire_shared_dma_cfg_pkg::wide_private_spm_tile_cfg(cfg);
   endfunction
 
   localparam cheshire_cfg_t FPGACfg = fpga_cfg();
   `CHESHIRE_TYPEDEF_ALL(tile_, FPGACfg)
   typedef logic [$bits(tile_axi_llc_id_t)+$clog2(NumTiles+NumDmas)-1:0] ddr_id_t;
   `CHESHIRE_TYPEDEF_AXI_CT(ddr, tile_addr_t, ddr_id_t,
-    tile_axi_data_t, tile_axi_strb_t, tile_axi_user_t)
+    logic [255:0], logic [31:0], tile_axi_user_t)
   ddr_req_t ddr_req;
   ddr_rsp_t ddr_rsp;
   wire sys_clk, soc_clk, clocks_locked;
@@ -99,6 +99,7 @@ module multi_tile_top_xilinx import cheshire_pkg::*; #(
 
   multi_tile_top #(
     .NumTiles(NumTiles), .NumDmas(NumDmas), .Cfg(FPGACfg),
+    .DmaAxiDataWidth(128), .SharedAxiDataWidth(256),
     .ddr_req_t(ddr_req_t), .ddr_rsp_t(ddr_rsp_t),
     .ext_mst_req_t(tile_axi_mst_req_t), .ext_mst_rsp_t(tile_axi_mst_rsp_t)
   ) i_multi_tile (
