@@ -15,10 +15,10 @@ packages:
     - apb
     - register_interface
   ara:
-    revision: 2895ba907e9eb14b3464609dc791a969d159a7c3
+    revision: bf042ed7fa2ef87dd8db821d9ebb951fd419d166
     version: null
     source:
-      Git: https://github.com/pulp-platform/ara.git
+      Git: git@github.com:imissyou6534/ara.git
     dependencies:
     - apb
     - axi
@@ -46,19 +46,19 @@ packages:
     - register_interface
     - tech_cells_generic
   axi_riscv_atomics:
-    revision: 0ac3a78fe342c5a5b9b10bff49d58897f773059e
-    version: 0.8.2
+    revision: b80a8f92a6d9f16b49c3a13cbae5262525408c45
+    version: null
     source:
-      Git: https://github.com/pulp-platform/axi_riscv_atomics.git
+      Git: git@github.com:imissyou6534/axi_riscv_atomics.git
     dependencies:
     - axi
     - common_cells
     - common_verification
   axi_rt:
-    revision: 641ea950e24722af747033f2ab85f0e48ea8d7f8
-    version: 0.0.0-alpha.9
+    revision: 3239986094107a3c71ed3568ade86e51d5c29d17
+    version: null
     source:
-      Git: https://github.com/pulp-platform/axi_rt.git
+      Git: git@github.com:imissyou6534/axi_rt.git
     dependencies:
     - axi
     - common_cells
@@ -88,10 +88,10 @@ packages:
     - common_cells
     - register_interface
   clint:
-    revision: d5390a805c20f9226758a152ba1645f61da73349
-    version: 0.2.0
+    revision: 0d93c54b7669cd0f17f4194e2a6f093ede31a08b
+    version: null
     source:
-      Git: https://github.com/pulp-platform/clint.git
+      Git: git@github.com:imissyou6534/clint.git
     dependencies:
     - common_cells
     - register_interface
@@ -110,10 +110,10 @@ packages:
       Git: https://github.com/pulp-platform/common_verification.git
     dependencies: []
   cva6:
-    revision: 99eac9a649001bdf5b8f9da52e0ca73d5c48db1c
+    revision: 8c12cc603ac0feda3fde4c2f464f5d4a085052dd
     version: null
     source:
-      Git: https://github.com/pulp-platform/cva6.git
+      Git: git@github.com:imissyou6534/cva6.git
     dependencies:
     - axi
     - common_cells
@@ -128,7 +128,7 @@ packages:
     - axi
   fpnew:
     revision: e5aa6a01b5bbe1675c3aa8872e1203413ded83d1
-    version: 0.2.3
+    version: null
     source:
       Git: https://github.com/pulp-platform/cvfpu.git
     dependencies:
@@ -142,10 +142,10 @@ packages:
     dependencies:
     - common_cells
   idma:
-    revision: c12caf59bb482fe44b27361f6924ad346b2d22fe
-    version: 0.6.3
+    revision: 122eea2cc6576fee60c6cd8e7161c967eab6e2d9
+    version: null
     source:
-      Git: https://github.com/pulp-platform/iDMA.git
+      Git: git@github.com:imissyou6534/iDMA.git
     dependencies:
     - axi
     - axi_stream
@@ -171,10 +171,10 @@ packages:
     - common_cells
     - common_verification
   opentitan_peripherals:
-    revision: cd3153de2783abd3d03d0595e6c4b32413c62f14
-    version: 0.4.0
+    revision: 1d5ff8b7c99a58aacc128e8d3248bd1577f5e377
+    version: null
     source:
-      Git: https://github.com/pulp-platform/opentitan_peripherals.git
+      Git: git@github.com:imissyou6534/opentitan_peripherals.git
     dependencies:
     - common_cells
     - register_interface

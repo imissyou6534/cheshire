@@ -361,6 +361,8 @@ module cheshire_soc import cheshire_pkg::*; #(
   axi_slv_rsp_t axi_reg_amo_rsp, axi_reg_cut_rsp;
   periph_req_t periph_req;
   periph_rsp_t periph_rsp;
+  periph_req_t periph_uncut_req;
+  periph_rsp_t periph_uncut_rsp;
 
   reg_req_t reg_in_req;
   reg_rsp_t reg_in_rsp;
@@ -420,7 +422,25 @@ module cheshire_soc import cheshire_pkg::*; #(
     .mst_req_t(periph_req_t), .mst_rsp_t(periph_rsp_t)
   ) i_periph_width (
     .clk_i, .rst_ni, .slv_req_i(axi_reg_cut_req), .slv_rsp_o(axi_reg_cut_rsp),
-    .mst_req_o(periph_req), .mst_rsp_i(periph_rsp)
+    .mst_req_o(periph_uncut_req), .mst_rsp_i(periph_uncut_rsp)
+  );
+
+  // Isolate the downsizer's W/B dependencies from the peripheral bridge.
+  axi_cut #(
+    .Bypass     ( 1'b0 ),
+    .aw_chan_t  ( periph_aw_chan_t ),
+    .w_chan_t   ( periph_w_chan_t ),
+    .b_chan_t   ( periph_b_chan_t ),
+    .ar_chan_t  ( periph_ar_chan_t ),
+    .r_chan_t   ( periph_r_chan_t ),
+    .axi_req_t  ( periph_req_t ),
+    .axi_resp_t ( periph_rsp_t )
+  ) i_periph_width_cut (
+    .clk_i, .rst_ni,
+    .slv_req_i  ( periph_uncut_req ),
+    .slv_resp_o ( periph_uncut_rsp ),
+    .mst_req_o  ( periph_req ),
+    .mst_resp_i ( periph_rsp )
   );
 
   // Keep the peripheral register bridge in its existing 64-bit domain.
@@ -1271,6 +1291,8 @@ module cheshire_soc import cheshire_pkg::*; #(
 
   debug_slv_req_t debug_mem_req;
   debug_slv_rsp_t debug_mem_rsp;
+  debug_slv_req_t debug_mem_uncut_req;
+  debug_slv_rsp_t debug_mem_uncut_rsp;
   cheshire_axi_dw_bridge #(
     .SlvDataWidth(Cfg.AxiDataWidth), .MstDataWidth(DebugDataWidth),
     .AddrWidth(Cfg.AddrWidth), .IdWidth(AxiSlvIdWidth), .UserWidth(Cfg.AxiUserWidth),
@@ -1278,7 +1300,25 @@ module cheshire_soc import cheshire_pkg::*; #(
     .mst_req_t(debug_slv_req_t), .mst_rsp_t(debug_slv_rsp_t)
   ) i_debug_mem_width (
     .clk_i, .rst_ni, .slv_req_i(dbg_slv_axi_cut_req), .slv_rsp_o(dbg_slv_axi_cut_rsp),
-    .mst_req_o(debug_mem_req), .mst_rsp_i(debug_mem_rsp)
+    .mst_req_o(debug_mem_uncut_req), .mst_rsp_i(debug_mem_uncut_rsp)
+  );
+
+  // Cut all five AXI channels after conversion, before the Debug bridge.
+  axi_cut #(
+    .Bypass     ( 1'b0 ),
+    .aw_chan_t  ( debug_slv_aw_chan_t ),
+    .w_chan_t   ( debug_slv_w_chan_t ),
+    .b_chan_t   ( debug_slv_b_chan_t ),
+    .ar_chan_t  ( debug_slv_ar_chan_t ),
+    .r_chan_t   ( debug_slv_r_chan_t ),
+    .axi_req_t  ( debug_slv_req_t ),
+    .axi_resp_t ( debug_slv_rsp_t )
+  ) i_debug_mem_width_cut (
+    .clk_i, .rst_ni,
+    .slv_req_i  ( debug_mem_uncut_req ),
+    .slv_resp_o ( debug_mem_uncut_rsp ),
+    .mst_req_o  ( debug_mem_req ),
+    .mst_resp_i ( debug_mem_rsp )
   );
 
   // AXI access to debug module

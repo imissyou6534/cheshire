@@ -1,0 +1,28 @@
+diff --git a/hardware/src/ara_sequencer.sv b/hardware/src/ara_sequencer.sv
+index 9cd0cc405c75caa36d1b4554296ae25c786f37d1..ae276ae9e4b0f8faec54997ff9fc8cf033457c44 100644
+--- a/hardware/src/ara_sequencer.sv
++++ b/hardware/src/ara_sequencer.sv
+@@ -270,7 +270,8 @@ module ara_sequencer import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::i
+           if (i == VFU_MFpu) target_vfus[i] = 1'b1;
+       [VMSEQ:VMXNOR]:
+         for (int i = 0; i < NrVFUs; i++)
+-          if (i == VFU_Alu || i == VFU_MaskUnit) target_vfus[i] = 1'b1;
++          // VID needs no ALU preprocessing or ALU queue/completion accounting.
++          if ((i == VFU_Alu && op != VID) || i == VFU_MaskUnit) target_vfus[i] = 1'b1;
+       [VRGATHER:VCOMPRESS]:
+         for (int i = 0; i < NrVFUs; i++)
+           if (i == VFU_Alu || i == VFU_MaskUnit) target_vfus[i] = 1'b1;
+diff --git a/hardware/src/lane/valu.sv b/hardware/src/lane/valu.sv
+index 8969b67fd17058ccc09f7055a449f1b3aa67aae5..5cc0c90d899d804f639e4bd45945ff77cd0363b1 100644
+--- a/hardware/src/lane/valu.sv
++++ b/hardware/src/lane/valu.sv
+@@ -800,7 +800,8 @@ module valu import ara_pkg::*; import rvv_pkg::*; import cf_math_pkg::idx_width;
+     //  Accept new instruction  //
+     //////////////////////////////
+ 
+-    if (!vinsn_queue_full && vfu_operation_valid_i &&
++    // VID is generated in MASKU, which does not consume an ALU result for it.
++    if (!vinsn_queue_full && vfu_operation_valid_i && vfu_operation_i.op != VID &&
+       (vfu_operation_i.vfu == VFU_Alu || vfu_operation_i.op inside {[VMSEQ:VCOMPRESS]})) begin
+       vinsn_queue_d.vinsn[vinsn_queue_q.accept_pnt] = vfu_operation_i;
+       // Do not wait for masks if, during a reduction, this lane is just a pass-through

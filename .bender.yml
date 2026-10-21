@@ -1,0 +1,23 @@
+# Keep transitive references on the same maintained IP revisions as the root.
+overrides:
+  ara:
+    git: "git@github.com:imissyou6534/ara.git"
+    rev: bf042ed7fa2ef87dd8db821d9ebb951fd419d166
+  cva6:
+    git: "git@github.com:imissyou6534/cva6.git"
+    rev: 8c12cc603ac0feda3fde4c2f464f5d4a085052dd
+  idma:
+    git: "git@github.com:imissyou6534/iDMA.git"
+    rev: 122eea2cc6576fee60c6cd8e7161c967eab6e2d9
+  axi_riscv_atomics:
+    git: "git@github.com:imissyou6534/axi_riscv_atomics.git"
+    rev: b80a8f92a6d9f16b49c3a13cbae5262525408c45
+  opentitan_peripherals:
+    git: "git@github.com:imissyou6534/opentitan_peripherals.git"
+    rev: 1d5ff8b7c99a58aacc128e8d3248bd1577f5e377
+  clint:
+    git: "git@github.com:imissyou6534/clint.git"
+    rev: 0d93c54b7669cd0f17f4194e2a6f093ede31a08b
+  axi_rt:
+    git: "git@github.com:imissyou6534/axi_rt.git"
+    rev: 3239986094107a3c71ed3568ade86e51d5c29d17

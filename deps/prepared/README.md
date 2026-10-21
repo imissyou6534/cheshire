@@ -53,3 +53,8 @@ contents. Preserve the existing prepared checkouts throughout recovery.
 
 The snapshot includes the current known VID behavior; it does not implement a
 VID fix. See `../../docs/ara_mask_repro_diagnosis_2026-10-19.md`.
+
+The subsequent VID repair is preserved separately in
+`../../util/patches/ara-4e3c5867-vid-masku-only.patch`. Apply that additional
+change only when recovering a new checkout; the live server Ara already has
+the repair. See `../../docs/ara_vid_fix_verification.md` for validation.

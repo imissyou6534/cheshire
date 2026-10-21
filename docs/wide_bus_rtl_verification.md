@@ -130,12 +130,16 @@ buf期望仍是Hello字符串及零填充。没有修改该应用来回避检查
 - 旧RTL上已先复现缺少宽度参数/64位限定导致的失败，再实现对应功能。
 - 只读独立RTL审查未发现确认的目标配置协议或类型缺陷。
 
-## 4. 已知Ara依赖行为，不能计为通过
+## 4. Ara VID 历史停顿与修复
 
 新增的连续mask序列 `vid/vand/vmsne → masked vle64 → masked vadd → masked vse64`
-会在当前准备好的Ara依赖中停顿。wide4lane/128与legacy2lane/64均在同一序列位置超时，
+曾在修复前的Ara依赖中停顿。wide4lane/128与legacy2lane/64均在同一序列位置超时，
 且无同步异常；因此不是已证明的128位改宽独有回归。
-源对齐到4KiB或插入fence也未消除停顿，尚未确认根因，不能简单归因为跨页。
+源对齐到4KiB或插入fence也未消除停顿。后续确认是 VID 多余 ALU 数据与 MASKU 消费不匹配。
+
+2026-10-20 已修复 VID 的 VALU 接收及全局 ALU 队列记账。原始程序在两个 profile 均通过，
+各完成 91 次 Ara 请求并返回 0；另有 217 个 VID 场景及内部断言通过。
+详见 [VID修复记录](ara_vid_fix_verification.md) 和主仓库保存的 Ara 补丁。
 
 复现源：`target/sim/sw/ara_mask_overlap_repro.c`。
 原始失败证据：`target/sim/build/wide_bus/mask_overlap_repro/{wide,legacy}/`。
@@ -144,11 +148,11 @@ buf期望仍是Hello字符串及零填充。没有修改该应用来回避检查
 python3 util/run_multitile_sim.py --boot spm --tiles 1 --dmas 1 \
   --app target/sim/sw/ara_mask_overlap_repro.c --require-ara \
   --sim-timeout-ns 5000000 --out target/sim/build/wide_bus/mask_repro_new
-# 加 --bus-profile legacy 可比较旧宽度profile；该复现当前预期超时，不能作为正例。
+# 加 --bus-profile legacy 可比较旧宽度profile；已修复的 Ara 下两者均应通过。
 ```
 
-准备好的`.bender`依赖没有为此修改。主要通过记录不包含该mask序列，不宣称所有RVV指令、
-mask重叠调度、indexed访问或Linux工作负载均已验证。
+2026-10-19 最初记录未修改依赖、未将该序列计为通过；2026-10-20 的修复已修改准备好的 Ara
+两处条件并保存精确补丁。不宣称所有RVV指令、mask重叠调度、indexed访问或Linux工作负载均已验证。
 
 ## 5. 复现主要系统检查
 

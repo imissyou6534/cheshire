@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
-// Diagnostic only: the masked sequence currently stalls on both bus profiles.
-// See docs/wide_bus_rtl_verification.md; this is not a positive smoke workload.
+// Regression for VID, comparison, and masked load/add/store sequencing.
+// See docs/ara_vid_fix_verification.md for the historical stall and repair.
 #include <stddef.h>
 #include <stdint.h>
 #include "shared_dma.h"
