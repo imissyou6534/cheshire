@@ -15,7 +15,7 @@ packages:
     - apb
     - register_interface
   ara:
-    revision: bf042ed7fa2ef87dd8db821d9ebb951fd419d166
+    revision: a51caad9302cbf74ff4119f4ebac28a835b4ae3b
     version: null
     source:
       Git: git@github.com:imissyou6534/ara.git

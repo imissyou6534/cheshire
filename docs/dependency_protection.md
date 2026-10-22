@@ -13,7 +13,7 @@ that dependencies such as Ara cannot select a different upstream CVA6.
 
 | Package | Repository | Development branch | Pinned commit |
 | --- | --- | --- | --- |
-| ara | imissyou6534/ara | dsa/ara-v0 | bf042ed7fa2ef87dd8db821d9ebb951fd419d166 |
+| ara | imissyou6534/ara | dsa/ara-v0 | a51caad9302cbf74ff4119f4ebac28a835b4ae3b |
 | cva6 | imissyou6534/cva6 | dsa/cva6-v0 | 8c12cc603ac0feda3fde4c2f464f5d4a085052dd |
 | idma | imissyou6534/iDMA | dsa/idma-v0 | 122eea2cc6576fee60c6cd8e7161c967eab6e2d9 |
 | axi_riscv_atomics | imissyou6534/axi_riscv_atomics | dsa/axi_riscv_atomics-v0 | b80a8f92a6d9f16b49c3a13cbae5262525408c45 |

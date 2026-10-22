@@ -2,7 +2,7 @@
 overrides:
   ara:
     git: "git@github.com:imissyou6534/ara.git"
-    rev: bf042ed7fa2ef87dd8db821d9ebb951fd419d166
+    rev: a51caad9302cbf74ff4119f4ebac28a835b4ae3b
   cva6:
     git: "git@github.com:imissyou6534/cva6.git"
     rev: 8c12cc603ac0feda3fde4c2f464f5d4a085052dd
