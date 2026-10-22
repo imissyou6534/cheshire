@@ -15,18 +15,18 @@ dependencies:
   apb_uart:                 { git: "https://github.com/pulp-platform/apb_uart.git",               version: 0.2.1  }
   axi:                      { git: "https://github.com/pulp-platform/axi.git",                    version: 0.39.6 }
   axi_llc:                  { git: "https://github.com/pulp-platform/axi_llc.git",                version: 0.2.1  }
-  axi_riscv_atomics:        { git: "git@github.com:imissyou6534/axi_riscv_atomics.git",           rev: b80a8f92a6d9f16b49c3a13cbae5262525408c45 }
-  axi_rt:                   { git: "git@github.com:imissyou6534/axi_rt.git",                      rev: 3239986094107a3c71ed3568ade86e51d5c29d17 }
+  axi_riscv_atomics:        { git: "https://github.com/imissyou6534/axi_riscv_atomics.git",       rev: b80a8f92a6d9f16b49c3a13cbae5262525408c45 }
+  axi_rt:                   { git: "https://github.com/imissyou6534/axi_rt.git",                  rev: 3239986094107a3c71ed3568ade86e51d5c29d17 }
   axi_vga:                  { git: "https://github.com/pulp-platform/axi_vga.git",                version: 0.1.3  }
   clic:                     { git: "https://github.com/pulp-platform/clic.git",                   version: 2.0.0  }
-  clint:                    { git: "git@github.com:imissyou6534/clint.git",                       rev: 0d93c54b7669cd0f17f4194e2a6f093ede31a08b }
+  clint:                    { git: "https://github.com/imissyou6534/clint.git",                   rev: 0d93c54b7669cd0f17f4194e2a6f093ede31a08b }
   common_cells:             { git: "https://github.com/pulp-platform/common_cells.git",           version: 1.33.0 }
   common_verification:      { git: "https://github.com/pulp-platform/common_verification.git",    version: 0.2.0  }
-  cva6:                     { git: "git@github.com:imissyou6534/cva6.git",                        rev: 8c12cc603ac0feda3fde4c2f464f5d4a085052dd }
-  ara:                      { git: "git@github.com:imissyou6534/ara.git",                         rev: a51caad9302cbf74ff4119f4ebac28a835b4ae3b }
-  iDMA:                     { git: "git@github.com:imissyou6534/iDMA.git",                        rev: 122eea2cc6576fee60c6cd8e7161c967eab6e2d9 }
+  cva6:                     { git: "https://github.com/imissyou6534/cva6.git",                    rev: 8c12cc603ac0feda3fde4c2f464f5d4a085052dd }
+  ara:                      { git: "https://github.com/imissyou6534/ara.git",                     rev: a51caad9302cbf74ff4119f4ebac28a835b4ae3b }
+  iDMA:                     { git: "https://github.com/imissyou6534/iDMA.git",                    rev: 122eea2cc6576fee60c6cd8e7161c967eab6e2d9 }
   irq_router:               { git: "https://github.com/pulp-platform/irq_router.git",             version: 0.0.1-beta.1 }
-  opentitan_peripherals:    { git: "git@github.com:imissyou6534/opentitan_peripherals.git",       rev: 1d5ff8b7c99a58aacc128e8d3248bd1577f5e377 }
+  opentitan_peripherals:    { git: "https://github.com/imissyou6534/opentitan_peripherals.git",   rev: 1d5ff8b7c99a58aacc128e8d3248bd1577f5e377 }
   register_interface:       { git: "https://github.com/pulp-platform/register_interface.git",     version: 0.4.4  }
   riscv-dbg:                { git: "https://github.com/pulp-platform/riscv-dbg.git",              version: 0.8.1  }
   serial_link:              { git: "https://github.com/pulp-platform/serial_link.git",            version: 1.1.1  }

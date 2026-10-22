@@ -24,9 +24,9 @@ that dependencies such as Ara cannot select a different upstream CVA6.
 The remaining 19 Bender packages retain their previous locked source,
 revision and dependency list. FPnew's old `version: 0.2.3` metadata is corrected
 to `null`: it is selected by `pulp-v0.2.3`, not a `v0.2.3` semantic-version tag;
-its commit remains unchanged. SSH access to GitHub is needed to fetch
-the maintained repositories. No private key path is committed in these files;
-configure SSH for the machine performing a fresh fetch.
+its commit remains unchanged. The maintained repositories use HTTPS, matching
+the main repository's clone URL. Public reads do not require GitHub SSH
+authentication. No machine-specific credentials are committed in these files.
 
 The protected build interface still resolves prepared paths by package name;
 it does not assert that their HEADs or dirty source match the lock. Check those

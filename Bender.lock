@@ -18,7 +18,7 @@ packages:
     revision: a51caad9302cbf74ff4119f4ebac28a835b4ae3b
     version: null
     source:
-      Git: git@github.com:imissyou6534/ara.git
+      Git: https://github.com/imissyou6534/ara.git
     dependencies:
     - apb
     - axi
@@ -49,7 +49,7 @@ packages:
     revision: b80a8f92a6d9f16b49c3a13cbae5262525408c45
     version: null
     source:
-      Git: git@github.com:imissyou6534/axi_riscv_atomics.git
+      Git: https://github.com/imissyou6534/axi_riscv_atomics.git
     dependencies:
     - axi
     - common_cells
@@ -58,7 +58,7 @@ packages:
     revision: 3239986094107a3c71ed3568ade86e51d5c29d17
     version: null
     source:
-      Git: git@github.com:imissyou6534/axi_rt.git
+      Git: https://github.com/imissyou6534/axi_rt.git
     dependencies:
     - axi
     - common_cells
@@ -91,7 +91,7 @@ packages:
     revision: 0d93c54b7669cd0f17f4194e2a6f093ede31a08b
     version: null
     source:
-      Git: git@github.com:imissyou6534/clint.git
+      Git: https://github.com/imissyou6534/clint.git
     dependencies:
     - common_cells
     - register_interface
@@ -113,7 +113,7 @@ packages:
     revision: 8c12cc603ac0feda3fde4c2f464f5d4a085052dd
     version: null
     source:
-      Git: git@github.com:imissyou6534/cva6.git
+      Git: https://github.com/imissyou6534/cva6.git
     dependencies:
     - axi
     - common_cells
@@ -145,7 +145,7 @@ packages:
     revision: 122eea2cc6576fee60c6cd8e7161c967eab6e2d9
     version: null
     source:
-      Git: git@github.com:imissyou6534/iDMA.git
+      Git: https://github.com/imissyou6534/iDMA.git
     dependencies:
     - axi
     - axi_stream
@@ -174,7 +174,7 @@ packages:
     revision: 1d5ff8b7c99a58aacc128e8d3248bd1577f5e377
     version: null
     source:
-      Git: git@github.com:imissyou6534/opentitan_peripherals.git
+      Git: https://github.com/imissyou6534/opentitan_peripherals.git
     dependencies:
     - common_cells
     - register_interface
