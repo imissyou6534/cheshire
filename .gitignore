@@ -39,6 +39,8 @@ target/sim/vsim/vsim.wlf
 target/sim/vsim/work/
 
 # VCS generated files
+target/ara_mask_tail_fix/
+target/ara_rom_selftest/
 target/sim/build/
 target/rom_autoboot/
 target/rom_autoboot_test/

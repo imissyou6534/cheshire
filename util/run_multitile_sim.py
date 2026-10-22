@@ -122,6 +122,7 @@ def run(args):
             tb_target = 'fft_ddr_test' if args.testbench == 'fft-ddr' else 'multitile_system_test'
             tb_files = [ROOT / 'target/sim/src/vip_multitile.sv', ROOT / ('target/sim/src/' + tb_name + '.sv')]
             compile_config = dict(boot=args.boot, tiles=args.tiles, dmas=args.dmas, hardware=baseline, top=tb_name,
+                                  uart_bit_period_ns=args.uart_bit_period_ns,
                                   bus_profile=args.bus_profile, widths=report['widths'],
                                   testbench={str(path): sha(path.read_bytes()) for path in tb_files},
                                   scripts={str(path): sha(path.read_bytes()) for path in
@@ -155,12 +156,14 @@ def run(args):
                 script = out / 'compile_deps.sh'
                 script.write_text(sources)
                 command(['bash', str(script)], cwd=out)
+                uart_parameters = (['-pvalue+' + tb_name + '.vip.UartBitPeriod=' + str(args.uart_bit_period_ns)]
+                                   if args.uart_bit_period_ns else [])
                 command(['vcs', '-full64', '-timescale=1ns/1ps', '-assert', 'svaext', '-top', tb_name,
                          '-pvalue+' + tb_name + '.NumTiles=' + str(args.tiles),
                          '-pvalue+' + tb_name + '.NumDmas=' + str(args.dmas),
                          '-pvalue+' + tb_name + '.RomEmbedded=' + str(int(args.boot == 'rom')),
                          '-pvalue+' + tb_name + '.WideBus=' + str(int(args.bus_profile == 'wide')),
-                         '-o', str(simv)], cwd=out)
+                         *uart_parameters, '-o', str(simv)], cwd=out)
                 cached.write_text(json.dumps(dict(signature=signature, config=compile_config), indent=2) + '\n')
             if args.build_only:
                 report['status'] = 'built'
@@ -250,6 +253,7 @@ def main():
     parser.add_argument('--expected-return', type=int, default=0)
     parser.add_argument('--uart-expected', type=Path)
     parser.add_argument('--uart-tiles', choices=['tile0', 'all'], default='tile0')
+    parser.add_argument('--uart-bit-period-ns', type=int, help='override VIP receive timing for firmware using a custom baud rate')
     parser.add_argument('--check-buffer', nargs=2, metavar=('SYMBOL', 'EXPECTED_BINARY'))
     parser.add_argument('--require-ara', action='store_true')
     parser.add_argument('--require-fft', action='store_true')
@@ -261,6 +265,8 @@ def main():
     args = parser.parse_args()
     if args.testbench == 'fft-ddr' and args.boot != 'spm':
         parser.error('FFT DDR testbench requires external SPM loading')
+    if args.uart_bit_period_ns is not None and (args.uart_bit_period_ns <= 0 or args.testbench != 'multitile'):
+        parser.error('UART timing override requires a positive period and the multitile testbench')
     if any(not arg.startswith('+FFT_') for arg in args.sim_arg):
         parser.error('specialized simulator arguments must start with +FFT_')
     if not (1 <= args.tiles <= 64 and 1 <= args.dmas <= 65536 and
