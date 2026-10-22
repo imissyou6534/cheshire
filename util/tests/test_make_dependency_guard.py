@@ -140,14 +140,69 @@ elif 'script' in args:
         self.assertIn('Dependency protection', result.stderr)
         self.assertFalse(self.record.exists())
 
-    def test_missing_generated_artifact_is_not_regenerated(self):
-        marker = self.paths['clint'] / '.generated'
-        marker.unlink()
-        result = self.make(str(marker))
+    def test_missing_required_rtl_is_not_regenerated(self):
+        rtl = self.paths['idma'] / 'target/rtl/idma_generated.sv'
+        rtl.unlink()
+        result = self.make(str(rtl))
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('Dependency protection', result.stderr)
-        self.assertFalse(marker.exists())
+        self.assertFalse(rtl.exists())
         self.assertFalse(self.record.exists())
+
+    def test_fpga_build_runs_without_untracked_generation_markers(self):
+        markers = [self.paths[name] / '.generated' for name in
+                   ('clint', 'opentitan_peripherals', 'axi_rt', 'axi_vga', 'serial_link')]
+        for marker in markers:
+            marker.unlink()
+        regs = self.root / 'hw/regs'
+        regs.mkdir(parents=True)
+        (regs / 'cheshire_regs.hjson').write_text('{}')
+        for name in ('cheshire_reg_pkg.sv', 'cheshire_reg_top.sv'):
+            (regs / name).write_text('')
+        scripts = self.root / 'target/xilinx/scripts'
+        scripts.mkdir(parents=True)
+        (scripts / 'impl_ip.tcl').write_text('')
+        for name in ('clkwiz', 'vio', 'ddr4'):
+            ip = self.root / ('target/xilinx/build/vcu118.' + name)
+            ip.mkdir(parents=True)
+            (ip / 'out.xci').write_text('fixture')
+        (self.root / 'fixture_rom.sv').write_text('')
+        (self.root / 'util/build_rom_autoboot.sh').write_text(
+            'printf "%s\\n" "$GUARD_FIXTURE_ROOT/fixture_rom.sv"\n')
+        (self.root / 'util/prepare_shared_dma_plic.sh').write_text('exit 0\n')
+        vivado = self.bin / 'vivado'
+        vivado.write_text('#!/bin/sh\n'
+                          'printf "%s\\n" "$*" > "$GUARD_FIXTURE_ROOT/vivado-call"\n')
+        vivado.chmod(0o755)
+        result = self.make('chs-xilinx-multi-tile-rom-vcu118', 'VIVADO=' + str(vivado))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((self.root / 'vivado-call').is_file())
+        self.assertTrue(all(not marker.exists() for marker in markers))
+        self.assertFalse((self.root / '.bender/.chs_deps').exists())
+
+    def test_software_headers_do_not_require_generation_markers(self):
+        shutil.copyfile(ROOT / 'sw/sw.mk', self.root / 'sw/sw.mk')
+        for path in self.paths.values():
+            (path / '.generated').unlink()
+        source = self.paths['clint'] / 'src/clint.hjson'
+        source.parent.mkdir(parents=True)
+        source.write_text('{}')
+        regtool = self.bin / 'regtool'
+        regtool.write_text('#!/bin/sh\nprintf "HEADER_FIXTURE\\n"\n')
+        regtool.chmod(0o755)
+        output = self.root / 'sw/include/regs/clint.h'
+        result = self.make(str(output), 'REGTOOL=' + str(regtool))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(output.read_text().strip(), 'HEADER_FIXTURE')
+        probe = self.root / 'probe.mk'
+        probe.write_text('guard-headers:\n\t@printf "%s\\n" $(CHS_SW_GEN_HDRS)\n')
+        result = self.make('-f', 'Makefile', '-f', str(probe), 'guard-headers')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertNotIn('.generated', result.stdout)
+        for name in ('gpio_regs.h', 'i2c_regs.h', 'spi_host_regs.h', 'rv_plic_regs.h'):
+            self.assertIn(str(self.paths['opentitan_peripherals'] / 'sw/include' / name),
+                          result.stdout)
+        self.assertTrue(all(not (path / '.generated').exists() for path in self.paths.values()))
 
 
 if __name__ == '__main__':

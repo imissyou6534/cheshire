@@ -95,9 +95,8 @@ AXIRT_NUM_MGRS ?= 6
 AXIRT_NUM_SUBS ?= 2
 IDMA_FULL_RTL := $(IDMA_ROOT)/target/rtl/idma_generated.sv
 
-CHS_PREPARED_MARKERS := $(CLINTROOT)/.generated $(OTPROOT)/.generated \
-    $(AXIRTROOT)/.generated $(AXI_VGA_ROOT)/.generated $(CHS_SLINK_DIR)/.generated
-$(CHS_PREPARED_MARKERS) $(IDMA_FULL_RTL):
+# Required RTL must exist; untracked generator stamps are not build inputs.
+$(IDMA_FULL_RTL):
 	@echo 'Dependency protection: missing prepared artifact $@; automatic regeneration is disabled.' >&2
 	@exit 2
 
@@ -108,11 +107,6 @@ clint _clint otp _otp axirt_regs axi_vga _axi_vga:
 
 CHS_HW_ALL += $(IDMA_FULL_RTL)
 CHS_HW_ALL += $(CHS_ROOT)/hw/regs/cheshire_reg_pkg.sv $(CHS_ROOT)/hw/regs/cheshire_reg_top.sv
-CHS_HW_ALL += $(CLINTROOT)/.generated
-CHS_HW_ALL += $(OTPROOT)/.generated
-CHS_HW_ALL += $(AXIRTROOT)/.generated
-CHS_HW_ALL += $(AXI_VGA_ROOT)/.generated
-CHS_HW_ALL += $(CHS_SLINK_DIR)/.generated
 
 #####################
 # Generate Boot ROM #

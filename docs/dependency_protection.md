@@ -39,9 +39,10 @@ the Ara VID repair and are not automatic replacements for the current lock.
 
 ## Fresh Environment Limitations
 
-Pinning Git revisions does not reproduce all prepared artifacts. Existing
-builds require `.generated` markers and generated RTL; software submodules,
-external simulation models and tool versions must also be provisioned.
+Pinning Git revisions does not reproduce all prepared artifacts. Builds require
+the actual RTL and software headers, not untracked `.generated` completion
+markers. Software submodules, external simulation models and tool versions must
+also be provisioned.
 Successful source-list and dependency-protection checks do not establish that
 a clean network checkout can build every target. See
 `owned_dependency_migration_2026-10-21.md` for the migration validation scope.
@@ -62,8 +63,13 @@ a clean network checkout can build every target. See
 The `.bender/.chs_deps` stamp is no longer included or automatically rebuilt.
 An explicit request for it fails, even when the stamp already exists.
 `chs-clean-deps` and its `clean-deps` alias also fail before deleting anything.
-Dependency generator Make fragments are not imported; missing generated RTL or
-preparation stamps stop the build rather than regenerating local dependencies.
+Dependency generator Make fragments are not imported; missing required generated
+RTL stops the build rather than regenerating local dependencies. The five
+`.generated` markers formerly required for CLINT, OpenTitan, AXI RT, AXI VGA and
+serial_link are no longer hardware or software prerequisites. OpenTitan header
+prerequisites name the four actual register headers. Local IP commits and
+worktree modifications remain allowed; ordinary builds do not enforce equality
+with the locked revision. Existing markers need not be removed.
 CLINT, OpenTitan, AXI RT and AXI VGA regeneration targets explicitly fail.
 
 The legacy `chs-shared-dma-test`, `chs-shared-dma-system-test` and

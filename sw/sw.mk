@@ -76,16 +76,17 @@ $$(CHS_SW_DIR)/include/regs/$(1).h: $(2)
 	$$(REGTOOL) --cdefines $$< > $$@
 endef
 
-$(eval $(call chs_sw_gen_hdr_rule,clint,$(CLINTROOT)/src/clint.hjson $(CLINTROOT)/.generated))
-$(eval $(call chs_sw_gen_hdr_rule,serial_link,$(CHS_ROOT)/hw/serial_link.hjson $(CHS_SLINK_DIR)/.generated))
-$(eval $(call chs_sw_gen_hdr_rule,axi_vga,$(AXI_VGA_ROOT)/data/axi_vga.hjson $(AXI_VGA_ROOT)/.generated))
+$(eval $(call chs_sw_gen_hdr_rule,clint,$(CLINTROOT)/src/clint.hjson))
+$(eval $(call chs_sw_gen_hdr_rule,serial_link,$(CHS_ROOT)/hw/serial_link.hjson))
+$(eval $(call chs_sw_gen_hdr_rule,axi_vga,$(AXI_VGA_ROOT)/data/axi_vga.hjson))
 $(eval $(call chs_sw_gen_hdr_rule,idma,$(IDMA_ROOT)/target/rtl/idma_reg64_2d.hjson))
 $(eval $(call chs_sw_gen_hdr_rule,axi_llc,$(CHS_LLC_DIR)/data/axi_llc_regs.hjson))
 $(eval $(call chs_sw_gen_hdr_rule,cheshire,$(CHS_ROOT)/hw/regs/cheshire_regs.hjson))
-$(eval $(call chs_sw_gen_hdr_rule,axi_rt,$(AXIRTROOT)/src/regs/axi_rt.hjson $(AXIRTROOT)/.generated))
+$(eval $(call chs_sw_gen_hdr_rule,axi_rt,$(AXIRTROOT)/src/regs/axi_rt.hjson))
 
-# Generate headers for OT peripherals in the bendered repo itself
-CHS_SW_GEN_HDRS += $(OTPROOT)/.generated
+# Use the headers committed with the prepared OpenTitan peripherals.
+CHS_SW_GEN_HDRS += $(addprefix $(OTPROOT)/sw/include/, \
+    gpio_regs.h i2c_regs.h spi_host_regs.h rv_plic_regs.h)
 
 ###############
 # Compilation #
