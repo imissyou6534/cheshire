@@ -1,6 +1,6 @@
-# Cheshire 多 Tile SoC
+# 多 Tile SoC
 
-基于 [PULP Cheshire](https://github.com/pulp-platform/cheshire)，集成 CVA6、Ara、FFT 加速器、私有 SPM 和共享 DMA，支持多 tile VCS 仿真与 VCU118 FPGA 构建。
+集成 CVA6、Ara、FFT 加速器、私有 SPM 和共享 DMA，支持多 tile VCS 仿真与 VCU118 FPGA 构建。
 
 以下命令在 Linux 服务器上执行。
 
@@ -31,7 +31,7 @@ python3 util/rom_bender.py check
 ```
 
 `bender checkout` 用于全新克隆的依赖初始化；已有本地 IP 修改时不要重新检出依赖。
-拉取失败时先补齐对应包的递归子模块，再继续构建。详见[依赖保护说明](docs/dependency_protection.md)。
+拉取失败时先补齐对应包的递归子模块，再继续构建。
 
 ## 3. VCS 多 Tile 仿真
 
@@ -44,7 +44,6 @@ python3 util/run_multitile_sim.py \
 ```
 
 脚本自动编译默认程序 `sw/tests/vector_helloworld.c`、构建 VCS 模型并运行仿真，日志应包含 `PASS MULTITILE`。
-模型下载失败时参考[仿真模型下载说明](docs/legacy_simulation_models.md)。
 
 如需 ROM 启动仿真，首次运行先准备根工程 ROM：
 
@@ -76,8 +75,6 @@ make chs-xilinx-multi-tile-rom-vcu118 \
 
 按需选择其中一个命令。更换程序时追加 `CHS_ROM_APP=sw/tests/你的程序.c`。
 最终 bitstream 为 `target/xilinx/out/multi_tile_rom.vcu118.bit`。重跑会覆盖同名构建目录，需保留旧报告时先备份。
-
-更多仿真配置见 [multitile_simulation.md](docs/multitile_simulation.md)。
 
 ## License
 

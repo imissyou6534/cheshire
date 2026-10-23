@@ -23,15 +23,4 @@ repo_url: https://github.com/pulp-platform/cheshire
 repo_name: pulp-platform/cheshire
 
 nav:
-- Home:
-  - index.md
-  - Getting Started: gs.md
-- Targets:
-  - tg/index.md
-  - Simulation: tg/sim.md
-  - Xilinx FPGAs: tg/xilinx.md
-  - SoC Integration: tg/integr.md
-- User Manual:
-  - um/index.md
-  - Architecture: um/arch.md
-  - Software Stack: um/sw.md
+- Home: index.md
